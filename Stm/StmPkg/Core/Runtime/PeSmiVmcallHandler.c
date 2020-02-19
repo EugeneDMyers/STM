@@ -26,10 +26,39 @@ STM_STATUS AddPeVm(UINT32 CpuIndex, PE_MODULE_INFO * callerDataStructure, UINT32
 	UINT32 numModulePages;
 	UINT_128   Data128;
 
-	DEBUG((EFI_D_ERROR,"%ld AddPeVm - entered, PeType: %d\n", CpuIndex, PeType));
+	DEBUG((EFI_D_INFO,"%ld AddPeVm - entered, PeType: %d\n", CpuIndex, PeType));
+
+	/* Check to see if there is an active PeVm or if the feature has been turned off */
+
+	if((PeVmData[PeType].PeVmState == PE_VM_OPT_OUT) ||
+	   (PeVmData[PeType].PeVmState == PE_VM_OPT_OUT_PERM))
+	{
+		DEBUG((EFI_D_ERROR, "%ld AddPeVm - ERROR - Perm PE/VM has been opted out\n",
+					CpuIndex));
+		return(PE_VM_PERM_OPT_OUT);
+	}
+
+	if((PeVmData[PeType].PeVmState == PE_VM_OPT_OUT) ||
+	   (PeVmData[PeType].PeVmState == PE_VM_OPT_OUT_TEMP))
+	{
+		DEBUG((EFI_D_ERROR, "%ld AddPeVm - ERROR - Temp PE/VM has been opted out\n",
+					CpuIndex));
+		return(PE_VM_TEMP_OPT_OUT);
+	}
+
+	if(PeVmData[PeType].PeVmState != PE_VM_AVAIL)
+	{
+		DEBUG((EFI_D_ERROR, "%ld AddPeVm - ERROR PE/VM already active\n", 
+					CpuIndex));
+		if(PeType == PE_PERM)
+			return(PE_VM_PERM_ALREADY_ESTABLISHED);
+		else
+			return(PE_VM_TEMP_ACTIVE);
+	}
+
 	PeVmData[PeType].PeVmState = PE_VM_ACTIVE;    // indicate we are here
 
-	DEBUG((EFI_D_ERROR, "%ld AddPeVm - callerDataStructure location: 0x%08lx 0x%08lx\n", CpuIndex,  (UINT64) (((UINT64)callerDataStructure) >> 32), (UINT64)(callerDataStructure)));
+	DEBUG((EFI_D_INFO, "%ld AddPeVm - callerDataStructure location: 0x%08lx 0x%08lx\n", CpuIndex,  (UINT64) (((UINT64)callerDataStructure) >> 32), (UINT64)(callerDataStructure)));
 
 	// pull information from the modules data structure
 

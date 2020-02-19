@@ -783,6 +783,7 @@ void InitPe()
 		PeVmData[i].SharedPageStm = 0;
 		PeVmData[i].SmmBuffer = 0;
 		PeVmData[i].SmmBufferSize = 0;
+		PeVmData[i].PeVmState = PE_VM_AVAIL;
 	}
 
 	PeSmiControl.PeExec     = 0;
