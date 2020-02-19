@@ -92,6 +92,8 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #define PE_VM_OPT_OUT           3          // PE VM not allowed by configuration
 #define PE_VM_TERM              4          // PE VM is terminating
 #define PE_VM_SUSPEND           5          // PE VM is suspended because of SMI
+#define PE_VM_OPT_OUT_PERM      6          // Perm PE VM Opt Out
+#define PE_VM_OPT_OUT_TEMP      7          // Temp PE VM Opt Out
 
 typedef unsigned char byte;
 typedef unsigned short int word;
