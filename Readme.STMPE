@@ -109,7 +109,7 @@ vmconfig settings:
 
 	SET_PERM_VM_RUN_ONCE           (1<<20)   - run perm VM only once, then breakdown
 	SET_PERM_VM_CRASH_BREAKDOWN    (1<<21)   - if Perm VM crashes, then breakdown
-	SET_PERM_VM_RUN_SMI            (1<<22)   - Run VM/PE via SMI timer
+	SET_PERM_VM_RUN_SMI            (1<<22)   - Run VM/PE via SMI timer (every 16 Seconds)
 	SET_VM_CLEAR_MEMORY            (1<<23)   - Clear heap before each run
 	SET_VM_TEXT_RW                 (1<<24)   - set VM/PE text space as RW
 	SET_VM_EXEC_HEAP               (1<<25)   - allow execution in Heap Space
