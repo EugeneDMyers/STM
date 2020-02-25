@@ -14,7 +14,7 @@
 
 #include "StmInit.h"
 #include "StmRuntime.h"
-#include "StmPe.h"
+#include "PeStm.h"
 
 extern void CpuReadySync(UINT32 Index);
 extern unsigned int CpuInSmiCount;
