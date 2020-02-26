@@ -56,14 +56,15 @@ SmmCrHandler (
   GptRegPtr = (UINTN *)&mGuestContextCommonSmm[VmType].GuestContextPerCpu[Index].Register;
   Rip = VmReadN(VMCS_N_GUEST_RIP_INDEX);
 
-  DEBUG((EFI_D_ERROR, "%ld SmmCrHandler - VmType %ld CrNum %d AccessType %d GptRegPtr[%d] 0x%llx Rip 0x%llx\n", 
-				cIndex,
-				VmType,
-				Qualification.CrAccess.CrNum,
-				Qualification.CrAccess.AccessType,
-				Qualification.CrAccess.GpReg,
-				GptRegPtr[Qualification.CrAccess.GpReg],
-				Rip ));
+  DEBUG((EFI_D_INFO, 
+	"%ld SmmCrHandler - VmType %ld CrNum %d AccessType %d GptRegPtr[%d] 0x%llx Rip 0x%llx\n", 
+	cIndex,
+	VmType,
+	Qualification.CrAccess.CrNum,
+	Qualification.CrAccess.AccessType,
+	Qualification.CrAccess.GpReg,
+	GptRegPtr[Qualification.CrAccess.GpReg],
+	Rip ));
 
   switch (Qualification.CrAccess.CrNum) {
   case 3: // Cr3

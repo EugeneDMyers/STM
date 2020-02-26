@@ -367,8 +367,8 @@ void MapVmcs ()
 		count = count + strlen1(FORMAT1);
 		Line[count] = '\0';
 
-		//DEBUG((EFI_D_ERROR, "MapVmcs: %s  :   %d : %016llx : FV %016llx\n", VmcsFieldPrintTable[i].FieldPrint,
-		DEBUG((EFI_D_ERROR, Line,
+		//DEBUG((EFI_D_INFO, "MapVmcs: %s  :   %d : %016llx : FV %016llx\n", VmcsFieldPrintTable[i].FieldPrint,
+		DEBUG((EFI_D_INFO, Line,
 			VmcsFieldOffsetTable[i].FieldEncoding, 
 			VmcsFieldOffsetTable[i].FieldOffset,
 			FieldValue));
@@ -381,7 +381,7 @@ void MapVmcs ()
 
 	// validate with the current VMCS - especially since we just flushed it
 
-	DEBUG((EFI_D_ERROR, "MapVmcs:  Field/Offset validation\n"));
+	DEBUG((EFI_D_INFO, "MapVmcs:  Field/Offset validation\n"));
 
 	for( i = 0; 
 		VmcsFieldOffsetTable[i].FieldEncoding != 0xFFFF;
@@ -432,6 +432,8 @@ UINT32 GetVmcsOffset( UINT32 field_encoding)
 		i++;
 	}
 
-	DEBUG((EFI_D_ERROR, "GetVmcsOffset - no VMCS offset fount for field encoding 0x%lx\n", field_encoding));
+	DEBUG((EFI_D_ERROR, 
+		"GetVmcsOffset - no VMCS offset fount for field encoding 0x%lx\n",
+		field_encoding));
 	return 0;   // offset of zero indicates no match found
 }

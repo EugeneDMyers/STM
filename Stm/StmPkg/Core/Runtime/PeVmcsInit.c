@@ -45,19 +45,11 @@ UINT32  SetupProtExecVm(UINT32 CpuIndex, UINT32 VM_Configuration, UINT32 mode, U
 	UINTN Rflags;
 	UINT32 VmcsSize;
 
-	DEBUG((EFI_D_ERROR, "%ld SetupProtExecVm - CR3_Index: %lx VmConfig: %lx mode: %x\n", 
-		CpuIndex, PeType, VM_Configuration, mode));
-
-	VmcsSize = GetVmcsSize();
-
-	// make sure that we can jump over the calling instruction
-	// StmVmm->VmexitInstructionLen = (UINT32)vmxRead(VM_EXIT_INSTRUCTION_LENGTH);
-	// DEBUG((EFI_D_ERROR, " startSmiHandler2 GUEST_RIP %llx Ins Len %x\n", vmxRead(GUEST_RIP), StmVmm->VmexitInstructionLen));
-	//DEBUG((EFI_D_ERROR, " startSmiHandler2 return dump %llx\n", *(UINT64 *) (vmxRead(GUEST_RIP)& 0xFFFFFFFFF)));  // should dump the calling location
-	// do some sanity checks on some of the user specified parameters before attempting the setup
-
-	// for now lets do this here - needs to be moved in a later version
-	//GetRootVmxState(CpuIndex, (ROOT_VMX_STATE *) PeVmData[PeType].SharedPageStm);
+	DEBUG((EFI_D_INFO, "%ld SetupProtExecVm - CR3_Index: %lx VmConfig: %lx mode: %x\n",
+		CpuIndex,
+		PeType,
+		VM_Configuration,
+		mode));
 
 	GetMPState = 0;  // initialize, assume we have no problems
 
@@ -100,23 +92,28 @@ UINT32  SetupProtExecVm(UINT32 CpuIndex, UINT32 VM_Configuration, UINT32 mode, U
 		{
 			// memory has been released, so get some more
 
-			mGuestContextCommonSmm[PeType].GuestContextPerCpu[0].Vmcs =
-							(UINT64) AllocatePages(2);//GetVmcsSize() / PAGE_SIZE);
+			mGuestContextCommonSmm[PeType].GuestContextPerCpu[0].Vmcs = (UINT64) AllocatePages(2);
 
 			if (0L == mGuestContextCommonSmm[PeType].GuestContextPerCpu[0].Vmcs)
 			{
-				DEBUG((EFI_D_ERROR, "%ld SetupProtExecVm - Failure allocating Prot execution VMCS memory\n", CpuIndex));
+				DEBUG((EFI_D_ERROR,
+					"%ld SetupProtExecVm - Failure allocating Prot execution VMCS memory\n",
+					CpuIndex));
 				FreePE_DataStructures(PeType);
 				return(PE_VMCS_ALLOC_FAIL);    // change to just telling the caller that it can't be done
 			}
 			// Initialize the VMCS area to be all zeros - bad things happen otherwise
 			// AllocatePages clears memor
 
-			DEBUG((EFI_D_ERROR, "%ld SetupProtExecVm - Allocated and cleared VMCS memory\n", CpuIndex));
+			DEBUG((EFI_D_INFO,
+				"%ld SetupProtExecVm - Allocated and cleared VMCS memory\n",
+				CpuIndex));
 		}
-		DEBUG((EFI_D_ERROR, "%ld SetupProtExecVm - VMCS region allocated at %llx\n",
-				CpuIndex,
-				mGuestContextCommonSmm[PeType].GuestContextPerCpu[0].Vmcs));
+		
+		DEBUG((EFI_D_INFO,
+			"%ld SetupProtExecVm - VMCS region allocated at %llx\n",
+			CpuIndex,
+			mGuestContextCommonSmm[PeType].GuestContextPerCpu[0].Vmcs));
 
 		// setup host and control vmcs here as we should only need to do this once
 		// the guest state stuff will be always reset, so we do that stuff later
@@ -124,7 +121,9 @@ UINT32  SetupProtExecVm(UINT32 CpuIndex, UINT32 VM_Configuration, UINT32 mode, U
 		AsmVmPtrStore (&mGuestContextCommonSmi.GuestContextPerCpu[CpuIndex].Vmcs);
 		Rflags = AsmVmClear(&mGuestContextCommonSmi.GuestContextPerCpu[CpuIndex].Vmcs);
 		if ((Rflags & (RFLAGS_CF | RFLAGS_ZF)) != 0) {
-			DEBUG ((EFI_D_ERROR, "%ld SetupProtExecVm - ERROR: AsmVmClear - %016lx : %08x\n", 
+			
+				DEBUG ((EFI_D_ERROR,
+				"%ld SetupProtExecVm - ERROR: AsmVmClear - %016lx : %08x\n", 
 				(UINTN)CpuIndex,
 				mGuestContextCommonSmm[PeType].GuestContextPerCpu[0].Vmcs,
 				Rflags));
@@ -139,8 +138,11 @@ UINT32  SetupProtExecVm(UINT32 CpuIndex, UINT32 VM_Configuration, UINT32 mode, U
 
 		Rflags = AsmVmPtrLoad(&mGuestContextCommonSmm[PeType].GuestContextPerCpu[0].Vmcs);   // make PE VMCS active
 		if ((Rflags & (RFLAGS_CF | RFLAGS_ZF)) != 0) {
-			DEBUG ((EFI_D_ERROR, "&ld SetupProtExecVm - ERROR: AsmVmPtrLoad - %016lx : %08x\n",
-				(UINTN)CpuIndex, mGuestContextCommonSmm[PeType].GuestContextPerCpu[0].Vmcs, Rflags));
+			DEBUG ((EFI_D_ERROR,
+				"&ld SetupProtExecVm - ERROR: AsmVmPtrLoad - %016lx : %08x\n",
+				(UINTN)CpuIndex,
+				mGuestContextCommonSmm[PeType].GuestContextPerCpu[0].Vmcs,
+				Rflags));
 			FreePE_DataStructures(PeType);
 			return(PE_VMCS_ALLOC_FAIL);    // change to just telling the caller that it can't be done
 		}
@@ -158,8 +160,8 @@ UINT32  SetupProtExecVm(UINT32 CpuIndex, UINT32 VM_Configuration, UINT32 mode, U
 		PeVmData[PeType].GuestState.GuestContextPerCpu.VmEntryCtrls.Bits.LoadIA32_EFER = 1;
 		PeVmData[PeType].GuestState.GuestContextPerCpu.VmEntryCtrls.Bits.LoadDebugControls = 1;
 
-		// Upon receiving control due to an SMI, the STM shall save the contents of the IA32_PERF_GLOBAL_CTRL MSR, disable any
-		// enabled bits in the IA32_PERF_GLOBAL_CTRL MSR
+		// Upon receiving control due to an SMI, the STM shall save the contents of the IA32_PERF_GLOBAL_CTRL MSR,
+		// disable any enabled bits in the IA32_PERF_GLOBAL_CTRL MSR
 		PeVmData[PeType].GuestState.GuestContextPerCpu.VmEntryCtrls.Bits.LoadIA32_PERF_GLOBAL_CTRL = 0;
 
 		PeVmData[PeType].GuestState.GuestContextPerCpu.VmEntryCtrls.Uint32 &= (UINT32)RShiftU64 (Data64, 32);
@@ -170,8 +172,8 @@ UINT32  SetupProtExecVm(UINT32 CpuIndex, UINT32 VM_Configuration, UINT32 mode, U
 		Data64 = AsmReadMsr64 (IA32_VMX_EXIT_CTLS_MSR_INDEX);
 		PeVmData[PeType].GuestState.GuestContextPerCpu.VmExitCtrls.Uint32 = (UINT32)Data64;
 		PeVmData[PeType].GuestState.GuestContextPerCpu.VmExitCtrls.Bits.Ia32eHost = (sizeof(UINT64) == sizeof(UINTN));
-		// Upon receiving control due to an SMI, the STM shall save the contents of the IA32_PERF_GLOBAL_CTRL MSR, disable any
-		// enabled bits in the IA32_PERF_GLOBAL_CTRL MSR
+		// Upon receiving control due to an SMI, the STM shall save the contents of the IA32_PERF_GLOBAL_CTRL MSR,
+		// disable any enabled bits in the IA32_PERF_GLOBAL_CTRL MSR
 		PeVmData[PeType].GuestState.GuestContextPerCpu.VmExitCtrls.Bits.LoadIA32_PERF_GLOBAL_CTRL = 0;
 		PeVmData[PeType].GuestState.GuestContextPerCpu.VmExitCtrls.Bits.SaveIA32_EFER = 1;
 		PeVmData[PeType].GuestState.GuestContextPerCpu.VmExitCtrls.Bits.AcknowledgeInterrupt = 1;
@@ -223,7 +225,10 @@ UINT32  SetupProtExecVm(UINT32 CpuIndex, UINT32 VM_Configuration, UINT32 mode, U
 				// intel manual says that LMA must mirror CRO_PG
 			}
 		}
-		DEBUG((EFI_D_ERROR, "%ld SetupProtExecVm - guest_efer: 0x%llx\n", CpuIndex, guest_efer));
+		DEBUG((EFI_D_INFO,
+			"%ld SetupProtExecVm - guest_efer: 0x%llx\n",
+			CpuIndex,
+			guest_efer));
 		// setup the code segment access right
 		GCS_AR = (11<<0)|SEG_CODEDATA | SEG_Present;       // code, (execute, read/accessed), present, granularity
 		DS_AR = (3<<0) | SEG_CODEDATA | SEG_Present;
@@ -233,7 +238,9 @@ UINT32  SetupProtExecVm(UINT32 CpuIndex, UINT32 VM_Configuration, UINT32 mode, U
 			GCS_AR |= CS_L | SEG_G;
 			DS_AR  |= SEG_G | CS_D;
 			SegLimit = 0xFFFFFFFF;
-			DEBUG((EFI_D_ERROR, "%ld SetupProtExecVm - Setting 64 bit mode\n", CpuIndex));
+			DEBUG((EFI_D_INFO,
+				"%ld SetupProtExecVm - Setting 64 bit mode\n",
+				CpuIndex));
 			PeVmData[PeType].PeCpuInitMode = PEVM_INIT_64bit;
 		}
 		else
@@ -243,21 +250,23 @@ UINT32  SetupProtExecVm(UINT32 CpuIndex, UINT32 VM_Configuration, UINT32 mode, U
 				GCS_AR |= CS_D | SEG_G;
 				DS_AR |=  CS_D | SEG_G;
 				SegLimit = 0xFFFFFFFF;
-				DEBUG((EFI_D_ERROR, "%ld SetupProtExecVm - Setting 32 bit mode\n", CpuIndex));
+				DEBUG((EFI_D_INFO, "%ld SetupProtExecVm - Setting 32 bit mode\n", CpuIndex));
 				PeVmData[PeType].PeCpuInitMode = PEVM_INIT_32bit;
 			}
 			else  // we are 16-bit mode
 			{
 				SegLimit = 0xFFFF;
-				DEBUG((EFI_D_ERROR, "%ld SetupProtExecVm - Setting 16 bit mode\n", CpuIndex));
+				DEBUG((EFI_D_INFO, "%ld SetupProtExecVm - Setting 16 bit mode\n", CpuIndex));
 				PeVmData[PeType].PeCpuInitMode = PEVM_INIT_16bit;
 			}
 		}
 
-		DEBUG((EFI_D_INFO, "%ld SetupProtExecVm - GCS_AR: 0x%llx SegLimit 0x%llx\n",
-				CpuIndex,
-				GCS_AR,
-				SegLimit));
+		DEBUG((EFI_D_INFO,
+			"%ld SetupProtExecVm - GCS_AR: 0x%llx SegLimit 0x%llx\n",
+			CpuIndex,
+			GCS_AR,
+			SegLimit));
+
 		// setup CR0 and CR4
 
 		// add fudge factors here
@@ -307,10 +316,12 @@ UINT32  SetupProtExecVm(UINT32 CpuIndex, UINT32 VM_Configuration, UINT32 mode, U
 
 		CR4_config &= (UINTN)AsmReadMsr64 (IA32_VMX_CR4_FIXED1_MSR_INDEX);
 
-		DEBUG((EFI_D_ERROR, "%ld SetupProtExecVm - Setting GUEST_CR0: %llx GUEST_CR4: %llx\n",
-					CpuIndex,
-					CR0_config,
-					CR4_config));
+		DEBUG((EFI_D_INFO,
+			"%ld SetupProtExecVm - Setting GUEST_CR0: %llx GUEST_CR4: %llx\n",
+			CpuIndex,
+			CR0_config,
+			CR4_config));  
+		///
 
 		PeVmData[PeType].GuestState.GuestContextPerCpu.CsSelector = cs_selector;
 		PeVmData[PeType].GuestState.GuestContextPerCpu.CsBase     = DEF_BASE;
@@ -397,9 +408,10 @@ UINT32  SetupProtExecVm(UINT32 CpuIndex, UINT32 VM_Configuration, UINT32 mode, U
 			PeVmData[PeType].GuestState.GuestContextPerCpu.SsLimit    = Limit32bit;
 			PeVmData[PeType].GuestState.GuestContextPerCpu.SsAccessRights = DataAR32bit; 
 		}
+	
 		PeVmData[PeType].GuestState.GuestContextPerCpu.Rip =
 				(UINTN)(PeVmData[PeType].UserModule.ModuleEntryPoint +
-				PeVmData[PeType].UserModule.ModuleLoadAddress);  // module entry point;
+				 PeVmData[PeType].UserModule.ModuleLoadAddress);  // module entry point;
 
 		PeVmData[PeType].GuestState.GuestContextPerCpu.IdtrBase = DEF_BASE;
 		//PeVmData[PeType].GuestState.GuestContextPerCpu.IdtrLimit = DEF_LIMIT;
@@ -415,7 +427,7 @@ UINT32  SetupProtExecVm(UINT32 CpuIndex, UINT32 VM_Configuration, UINT32 mode, U
 
 		PeVmData[PeType].GuestState.GuestContextPerCpu.ActivityState = GUEST_ACTIVITY_STATE_ACTIVE;
 		PeVmData[PeType].GuestState.GuestContextPerCpu.InterruptibilityState.Uint32 = 0; 
-		PeVmData[PeType].GuestState.GuestContextPerCpu.InterruptibilityState.Bits.BlockingBySmi = 1;  // We allow NMI to cause a VM exit
+		PeVmData[PeType].GuestState.GuestContextPerCpu.InterruptibilityState.Bits.BlockingBySmi = 1;
 
 		PeVmData[PeType].GuestState.GuestContextPerCpu.VmcsLinkPointerFull = 0xFFFFFFFFFFFFFFFF;
 		PeVmData[PeType].GuestState.GuestContextPerCpu.VmcsLinkPointerHigh = 0xFFFFFFFF;
@@ -457,9 +469,10 @@ UINT32  SetupProtExecVm(UINT32 CpuIndex, UINT32 VM_Configuration, UINT32 mode, U
 		VmWrite32 (VMCS_32_CONTROL_PAGE_FAULT_ERROR_CODE_MASK_INDEX, PageFaultErrorCodeMask);
 		VmWrite32 (VMCS_32_CONTROL_PAGE_FAULT_ERROR_CODE_MATCH_INDEX, PageFaultErrorCodeMatch);
 	}
-	DEBUG((EFI_D_ERROR, "%ld SetupProtExecVm - Guest CS access rights %llx\n",
-			CpuIndex, 
-			VmRead32(VMCS_32_GUEST_CS_ACCESS_RIGHT_INDEX)));
+	DEBUG((EFI_D_INFO,
+		"%ld SetupProtExecVm - Guest CS access rights %llx\n",
+		CpuIndex,
+		VmRead32(VMCS_32_GUEST_CS_ACCESS_RIGHT_INDEX)));
 	return rc;
 }
 

@@ -109,7 +109,9 @@ VOID
 		pIndex = 0;
 	else
 	{
-		DEBUG((EFI_D_ERROR, "%ld PeStmHandlerSmm - Warning SMI_HANDLER type used in Pe handler\n", Index));
+		DEBUG((EFI_D_ERROR,
+			"%ld PeStmHandlerSmm - Warning SMI_HANDLER type used in Pe handler\n",
+			Index));
 		pIndex = Index;
 	}
 	// make sure no one fires an SMI our way
@@ -129,7 +131,7 @@ VOID
 	// Dispatch
 	//
 	InfoBasic.Uint32 = VmRead32 (VMCS_32_RO_EXIT_REASON_INDEX);
-	//DEBUG((EFI_D_ERROR, "%d PeStmHandlerSmm - InfoBasic: 0x%0l8x Reason: %d\n", Index, InfoBasic.Uint32, InfoBasic.Bits.Reason));
+	//DEBUG((EFI_D_DEBUG, "%d PeStmHandlerSmm - InfoBasic: 0x%0l8x Reason: %d\n", Index, InfoBasic.Uint32, InfoBasic.Bits.Reason));
 
 	if (InfoBasic.Bits.Reason >= VmExitReasonMax) {
 		DEBUG ((EFI_D_ERROR, "%ld PeStmHandlerSmm - !!!Unknown VmExit Reason!!!\n", Index));
@@ -144,7 +146,10 @@ VOID
 	//
 	if(mStmHandlerPeVm[InfoBasic.Bits.Reason] == NULL)
 	{
-		DEBUG((EFI_D_INFO, "%ld PeStmHandlerSmm - ***WARNING*** mStmHandlerPeVm[%x] is NULL- aborting STM \n", Index, InfoBasic.Bits.Reason));
+		DEBUG((EFI_D_ERROR,
+			"%ld PeStmHandlerSmm - ***WARNING*** mStmHandlerPeVm[%x] is NULL- aborting STM \n",
+			Index,
+			InfoBasic.Bits.Reason));
 		WriteUnaligned32 ((UINT32 *)&Reg->Rax, 0xFFFFFFFF);
 		VmWriteN (VMCS_N_GUEST_RIP_INDEX, VmReadN (VMCS_N_GUEST_RIP_INDEX) + VmRead32 (VMCS_32_RO_VMEXIT_INSTRUCTION_LENGTH_INDEX));
 		DEBUG((EFI_D_ERROR, "%ld PeStmHandlerSmm - CpuDeadLoop\n", Index));
@@ -172,7 +177,10 @@ VOID
 
 	DEBUG ((EFI_D_ERROR, "%ld PeStmHandlerSmm - !!!ResumePeGuestSmm FAIL!!!\n", (UINTN)Index));
 	DEBUG ((EFI_D_ERROR, "%ld PeStmHandlerSmm - Rflags: %08x\n", Index, Rflags));
-	DEBUG ((EFI_D_ERROR, "%ld PeStmHandlerSmm - VMCS_32_RO_VM_INSTRUCTION_ERROR: %08x\n", Index, (UINTN)VmRead32 (VMCS_32_RO_VM_INSTRUCTION_ERROR_INDEX)));
+	DEBUG ((EFI_D_ERROR,
+		"%ld PeStmHandlerSmm - VMCS_32_RO_VM_INSTRUCTION_ERROR: %08x\n",
+		Index,
+		(UINTN)VmRead32 (VMCS_32_RO_VM_INSTRUCTION_ERROR_INDEX)));
 	DumpVmcsAllField (Index);
 	DumpRegContext (&mGuestContextCommonSmm[VmType].GuestContextPerCpu[pIndex].Register, Index);
 	DumpGuestStack(Index);

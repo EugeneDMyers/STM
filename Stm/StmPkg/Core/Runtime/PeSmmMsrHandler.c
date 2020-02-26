@@ -179,7 +179,7 @@ PeWriteMsrHandler (
 #endif
  
   default:
-    DEBUG ((EFI_D_INFO, "%ldWriteMsrHandler - VM/PE has no access to this MSR - ignoring\n", CpuIndex));
+    DEBUG ((EFI_D_ERROR, "%ldWriteMsrHandler - VM/PE has no access to this MSR - ignoring\n", CpuIndex));
     break;
   }
 

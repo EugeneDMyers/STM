@@ -59,7 +59,7 @@ void PeIoHandler( IN UINT32 CpuIndex)
 	if((PortNumber == 0x3D8)||(PortNumber == 0x3F8))
 	{
 		UINT64 AddressSpaceStart = PeVmData[VmType].UserModule.AddressSpaceStart;
-		UINT64 AddressSpaceEnd = PeVmData[VmType].UserModule.AddressSpaceStart + PeVmData[VmType].UserModule.AddressSpaceSize;
+		UINT64 AddressSpaceEnd = PeVmData[VmType].UserModule.AddressSpaceStart + 							PeVmData[VmType].UserModule.AddressSpaceSize;
 		GuestAddress = ReadUnaligned64((UINT64 *) &Reg->Rsi); // assume that DS Base is zero
 		DataSize = ReadUnaligned32((UINT32 *) &Reg->Rcx);
 		//DEBUG((EFI_D_INFO, "%ld PeIoHandler - GuestAddress: 0x%016llx DataSize: 0x%016llx \n", CpuIndex, GuestAddress, DataSize));
@@ -71,15 +71,21 @@ void PeIoHandler( IN UINT32 CpuIndex)
 		if(GuestAddress < AddressSpaceStart ||
 			GuestAddressEnd > AddressSpaceEnd)
 		{
-			DEBUG((EFI_D_INFO, "%ld PeIoHander - **ERROR** Requested serial output not within address space string: 0x%016llx:0x%016llx address range: 0x%016llx:0x%016llx\n",
-				CpuIndex, GuestAddress, GuestAddressEnd, AddressSpaceStart, AddressSpaceEnd)); //
+			DEBUG((EFI_D_ERROR,
+				"%ld PeIoHander - **ERROR** Requested serial output not within address space string: 0x%016llx:0x%016llx address range: 0x%016llx:0x%016llx\n",
+				CpuIndex,
+				GuestAddress,
+				GuestAddressEnd,
+				AddressSpaceStart,
+				AddressSpaceEnd)); //
 		}
 		else
 		{
 			// address within bounds, then process it
 
 			// find it within SMRAM
-			PhysAddress = TranslateEPTGuestToHost(mGuestContextCommonSmm[VmType].EptPointer.Uint64, (UINTN)GuestAddress, 0L);
+			PhysAddress = TranslateEPTGuestToHost(mGuestContextCommonSmm[VmType].EptPointer.Uint64,
+					 (UINTN)GuestAddress, 0L);
 			//PhysAddressEnd = TranslateEPTGuestToHost(mGuestContextCommonSmm[VmType].EptPointer.Uint64, (UINTN)GuestAddress + GuestAddressEnd), 0L);
 
 			if(DataSize > NUMDEBLEN)
@@ -100,6 +106,7 @@ void PeIoHandler( IN UINT32 CpuIndex)
 
 	// need to bump the instruction counter to get past the I/O instruction
 
-	VmWriteN (VMCS_N_GUEST_RIP_INDEX, VmReadN (VMCS_N_GUEST_RIP_INDEX) + VmRead32 (VMCS_32_RO_VMEXIT_INSTRUCTION_LENGTH_INDEX));
+	VmWriteN (VMCS_N_GUEST_RIP_INDEX,
+			VmReadN (VMCS_N_GUEST_RIP_INDEX) + VmRead32 (VMCS_32_RO_VMEXIT_INSTRUCTION_LENGTH_INDEX));
 	return;  // all done
 }

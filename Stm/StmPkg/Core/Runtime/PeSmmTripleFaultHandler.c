@@ -22,7 +22,9 @@ extern UINT32 PostPeVmProc(UINT32 rc, UINT32 CpuIndex, UINT32 mode);
 void PeTripleFaultHandler( IN UINT32 CpuIndex)
 {
 	EndTimeStamp = AsmReadTsc();
-	DEBUG((EFI_D_ERROR, "%ld PeTripleFaultHandler - Triple Fault occured in VM/PE - terminating\n", CpuIndex));
+	DEBUG((EFI_D_ERROR,
+		"%ld PeTripleFaultHandler - Triple Fault occured in VM/PE - terminating\n",
+		CpuIndex));
 	PostPeVmProc(PE_VM_TRIPLE_FAULT, CpuIndex, PRESERVE_VM);        // bring the VM down
 	return;
 

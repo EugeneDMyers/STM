@@ -44,7 +44,10 @@ SmiEventHandler (
     if ((ExecutiveVmcsPtr + VmcsSize > (UINTN)mHostContextCommon.TsegBase) &&
         (ExecutiveVmcsPtr < ((UINTN)mHostContextCommon.TsegBase + mHostContextCommon.TsegLength))) {
         // Overlap TSEG
-        DEBUG ((EFI_D_ERROR, "%ld SmiEventHandler - ExecutiveVmcsPtr violation (SmiEventHandler) - %016lx\n", Index, ExecutiveVmcsPtr));
+        DEBUG ((EFI_D_ERROR,
+		"%ld SmiEventHandler - ExecutiveVmcsPtr violation (SmiEventHandler) - %016lx\n",
+		Index,
+		ExecutiveVmcsPtr));
         return ;
     }
  
@@ -52,7 +55,9 @@ SmiEventHandler (
     if ((VmcsLinkPtr + VmcsSize > (UINTN)mHostContextCommon.TsegBase) &&
         (VmcsLinkPtr < ((UINTN)mHostContextCommon.TsegBase + mHostContextCommon.TsegLength))) {
         // Overlap TSEG
-        DEBUG ((EFI_D_ERROR, "SmiEventHandler - VmcsLinkPtr violation (SmiEventHandler) - %016lx\n", VmcsLinkPtr));
+        DEBUG ((EFI_D_ERROR,
+		"SmiEventHandler - VmcsLinkPtr violation (SmiEventHandler) - %016lx\n",
+		VmcsLinkPtr));
         return ;
     }
 
@@ -70,13 +75,20 @@ SmiEventHandler (
 	AsmVmPtrStore (&mGuestContextCommonSmi.GuestContextPerCpu[Index].Vmcs);
     Rflags = AsmVmPtrLoad (&mGuestContextCommonSmm[SMI_HANDLER].GuestContextPerCpu[Index].Vmcs);
     if ((Rflags & (RFLAGS_CF | RFLAGS_ZF)) != 0) {
-        DEBUG ((EFI_D_ERROR, "ERROR: AsmVmPtrLoad(%d) - %016lx : %08x\n", (UINTN)Index, mGuestContextCommonSmm[SMI_HANDLER].GuestContextPerCpu[Index].Vmcs, Rflags));
+        DEBUG ((EFI_D_ERROR,
+		"ERROR: AsmVmPtrLoad(%d) - %016lx : %08x\n",
+		(UINTN)Index,
+		mGuestContextCommonSmm[SMI_HANDLER].GuestContextPerCpu[Index].Vmcs,
+		Rflags));
         CpuDeadLoop ();
     }
     
-    VmWriteN (VMCS_N_GUEST_RIP_INDEX, (UINTN)mHostContextCommon.HostContextPerCpu[Index].TxtProcessorSmmDescriptor->SmmSmiHandlerRip);
-    VmWriteN (VMCS_N_GUEST_RSP_INDEX, (UINTN)mHostContextCommon.HostContextPerCpu[Index].TxtProcessorSmmDescriptor->SmmSmiHandlerRsp);
-    VmWriteN (VMCS_N_GUEST_CR3_INDEX, mGuestContextCommonSmm[SMI_HANDLER].GuestContextPerCpu[Index].Cr3);
+    VmWriteN (VMCS_N_GUEST_RIP_INDEX,
+		(UINTN)mHostContextCommon.HostContextPerCpu[Index].TxtProcessorSmmDescriptor->SmmSmiHandlerRip);
+    VmWriteN (VMCS_N_GUEST_RSP_INDEX,
+		(UINTN)mHostContextCommon.HostContextPerCpu[Index].TxtProcessorSmmDescriptor->SmmSmiHandlerRsp);
+    VmWriteN (VMCS_N_GUEST_CR3_INDEX,
+		mGuestContextCommonSmm[SMI_HANDLER].GuestContextPerCpu[Index].Cr3);
 #if 0 
     DEBUG ((EFI_D_INFO, "!!!Enter SmmHandler - %d\n", (UINTN)Index));
 #endif 
