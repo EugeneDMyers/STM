@@ -47,10 +47,25 @@ void PeExceptionHandler( IN UINT32 CpuIndex)
 	IntErr  = VmRead32(VMCS_32_RO_VMEXIT_INTERRUPTION_ERROR_CODE_INDEX);
 	StmVmPeNmiExCount++;   // free up the waiting smi processor
 
-	DEBUG((EFI_D_ERROR, "%ld PeExceptionHandler VmexitInterruptionInfo: 0x%x  INTERRUPTION_ERROR_CODE 0x%x\n", CpuIndex, IntInfo.Uint32, IntErr));
-	/*DEBUG*/DEBUG((EFI_D_ERROR, "%ld PeExceptionHandler - Exception Bitmap is: 0x%08lx\n", CpuIndex, VmRead32(VMCS_32_CONTROL_EXCEPTION_BITMAP_INDEX)));
-	/*DEBUG*/DEBUG((EFI_D_ERROR, "%ld PeExceptionHandler - IDT Vectoring info 0x%08lx IDT Error Code 0x%08lx\n", CpuIndex, VmRead32(VMCS_32_RO_IDT_VECTORING_INFO_INDEX), VmRead32(VMCS_32_RO_IDT_VECTORING_ERROR_CODE_INDEX)));
-	/*DEBUG*/DEBUG((EFI_D_ERROR, "%ld PeExceptionHandler - IDT Base 0x%016llx Limit 0x%016llx\n", CpuIndex, (UINT64)VmReadN(VMCS_N_GUEST_IDTR_BASE_INDEX), VmRead32(VMCS_32_GUEST_IDTR_LIMIT_INDEX)));
+	DEBUG((EFI_D_INFO,
+		"%ld PeExceptionHandler VmexitInterruptionInfo: 0x%x  INTERRUPTION_ERROR_CODE 0x%x\n",
+		CpuIndex,
+		IntInfo.Uint32,
+		IntErr));
+	/*DEBUG*/DEBUG((EFI_D_INFO,
+			"%ld PeExceptionHandler - Exception Bitmap is: 0x%08lx\n",
+			CpuIndex,
+			VmRead32(VMCS_32_CONTROL_EXCEPTION_BITMAP_INDEX)));
+	/*DEBUG*/DEBUG((EFI_D_INFO,
+			"%ld PeExceptionHandler - IDT Vectoring info 0x%08lx IDT Error Code 0x%08lx\n",
+			CpuIndex,
+			VmRead32(VMCS_32_RO_IDT_VECTORING_INFO_INDEX),
+			VmRead32(VMCS_32_RO_IDT_VECTORING_ERROR_CODE_INDEX)));
+	/*DEBUG*/DEBUG((EFI_D_INFO,
+			"%ld PeExceptionHandler - IDT Base 0x%016llx Limit 0x%016llx\n",
+			CpuIndex,
+			(UINT64)VmReadN(VMCS_N_GUEST_IDTR_BASE_INDEX),
+			VmRead32(VMCS_32_GUEST_IDTR_LIMIT_INDEX)));
 
 	if(IntInfo.Bits.Valid == 1)
 	{
@@ -61,7 +76,9 @@ void PeExceptionHandler( IN UINT32 CpuIndex)
 			{
 				// NMI means that (in this case) an external processor has received an SMI..
 
-				DEBUG((EFI_D_ERROR, "%ld PeExceptionHandler - received NMI because SMI detected\n", CpuIndex));
+				DEBUG((EFI_D_INFO,
+					"%ld PeExceptionHandler - received NMI because SMI detected\n",
+					CpuIndex));
 				save_Inter_PeVm(CpuIndex);  // put the VM to sleep so that the SMI can be handled
 				break;
 			}
@@ -74,15 +91,17 @@ void PeExceptionHandler( IN UINT32 CpuIndex)
 		case INTERRUPT_VECTOR_SS:
 			{
 				// General Protection Fault- kill the PE/VM
-				//DEBUG((EFI_D_ERROR, "%ld - PE/VM terminated because of an exception %x\n", CpuIndex, IntInfo.Uint32));
 
-				DEBUG((EFI_D_ERROR, "%ld PeExceptionHandler - PE/VM General Protection Fault @ 0x%04lx:0x%016llx Address: 0x%016llx Info: 0x%lx\n",
+				DEBUG((EFI_D_ERROR, 
+					"%ld PeExceptionHandler - PE/VM General Protection Fault @ 0x%04lx:0x%016llx Address: 0x%016llx Info: 0x%lx\n",
 					CpuIndex,
 					VmRead16 (VMCS_16_GUEST_CS_INDEX),               
 					VmReadN(VMCS_N_GUEST_RIP_INDEX),
 					VmReadN(VMCS_N_RO_EXIT_QUALIFICATION_INDEX),
-					IntInfo.Uint32)); 
-					if(((PERM_VM_INJECT_INT & PeVmData[VmType].UserModule.VmConfig) == PERM_VM_INJECT_INT))// does the VM/PE want to handle its own interrupts
+					IntInfo.Uint32));
+
+					// does the VM/PE want to handle its own interrupts 
+					if(((PERM_VM_INJECT_INT & PeVmData[VmType].UserModule.VmConfig) == PERM_VM_INJECT_INT))
 					{
 						EventInjection(CpuIndex, IntInfo, IntErr);
 						return;
@@ -100,7 +119,8 @@ void PeExceptionHandler( IN UINT32 CpuIndex)
 
 				address = VmReadN(VMCS_N_RO_EXIT_QUALIFICATION_INDEX);
 
-				DEBUG((EFI_D_ERROR, "%ld PeExceptionHandler - VM/PE Page Fault @ 0x%04lx:0x%016llx Address: 0x%016llx Info: 0x%lx\n",
+				DEBUG((EFI_D_INFO,
+					"%ld PeExceptionHandler - VM/PE Page Fault @ 0x%04lx:0x%016llx Address: 0x%016llx Info: 0x%lx\n",
 					CpuIndex,
 					VmRead16 (VMCS_16_GUEST_CS_INDEX),               
 					VmReadN(VMCS_N_GUEST_RIP_INDEX),
@@ -109,17 +129,20 @@ void PeExceptionHandler( IN UINT32 CpuIndex)
 				
 				if(( address >= IDTLocation) && (address < (IDTLocation + SIZE_4KB)))
 				{
-					DEBUG((EFI_D_ERROR, "%ld PeExceptionHandler - VM/PE Page Fault on IDT page - terminating VM\n", CpuIndex));
+					DEBUG((EFI_D_ERROR,
+						"%ld PeExceptionHandler - VM/PE Page Fault on IDT page - terminating VM\n",
+						CpuIndex));
 				}
 				else
-				{
-					if(((PERM_VM_INJECT_INT & PeVmData[VmType].UserModule.VmConfig) == PERM_VM_INJECT_INT))// does the VM/PE want to handle its own page fault
+				{	
+					// does the VM/PE want to handle its own page fault
+					if(((PERM_VM_INJECT_INT & PeVmData[VmType].UserModule.VmConfig) == PERM_VM_INJECT_INT))
 					{
 						AsmWriteCr2(address);   //CR2 holds the Page Fault address
 
 						VmWrite32(VMCS_32_CONTROL_VMENTRY_INTERRUPTION_INFO_INDEX, IntInfo.Uint32);
 						VmWrite32(VMCS_32_CONTROL_VMENTRY_EXCEPTION_ERROR_CODE_INDEX , IntErr);
-						/*debug*/ DEBUG((EFI_D_ERROR, "%ld PeExceptionHandler - Injecting Page Fault\n", CpuIndex));
+						/*debug*/ DEBUG((EFI_D_INFO, "%ld PeExceptionHandler - Injecting Page Fault\n", CpuIndex));
 						return;
 					}
 				}
@@ -259,7 +282,8 @@ endpf:
 			}
 		default:
 			{
-				DEBUG((EFI_D_ERROR, "%ld PeExceptionHandler - PE/VM Unhandled Exception @ 0x%04lx:0x%016llx Address: 0x%016llx Info: 0x%lx\n",
+				DEBUG((EFI_D_ERROR,
+					"%ld PeExceptionHandler - PE/VM Unhandled Exception @ 0x%04lx:0x%016llx Address: 0x%016llx Info: 0x%lx\n",
 					CpuIndex,
 					VmRead16 (VMCS_16_GUEST_CS_INDEX),               
 					VmReadN(VMCS_N_GUEST_RIP_INDEX),
@@ -278,7 +302,8 @@ endpf:
 		return;
 	}
 
-	DEBUG((EFI_D_ERROR, "%ld PeExceptionHandler - Warning Info Valid bits not equal to 1 @ 0x%04lx:0x%016llx Address: 0x%016llx Info: 0x%lx\n",
+	DEBUG((EFI_D_ERROR,
+		"%ld PeExceptionHandler - Warning Info Valid bits not equal to 1 @ 0x%04lx:0x%016llx Address: 0x%016llx Info: 0x%lx\n",
 		CpuIndex,
 		VmRead16 (VMCS_16_GUEST_CS_INDEX),               
 		VmReadN(VMCS_N_GUEST_RIP_INDEX),

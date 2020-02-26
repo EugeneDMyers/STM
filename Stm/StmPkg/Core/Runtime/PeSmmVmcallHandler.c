@@ -70,8 +70,11 @@ STM_STATUS
 	    (AddressParameter > GuestSmmEnd) ||
 		((AddressParameter + sizeof(STM_MAP_ADDRESS_RANGE_DESCRIPTOR)) > GuestSmmEnd))
 	{
-		DEBUG ((EFI_D_ERROR, "%ld PeSmmVmcallMapAddressRangeHandler - Security Violation! - parameter block not in guest physical within SMRAM\n", Index));
-		DEBUG ((EFI_D_ERROR, "%ld PeSmmVmcallMapAddressRangeHandler - AddressParameter = 0x%016llx",
+		DEBUG ((EFI_D_ERROR,
+			"%ld PeSmmVmcallMapAddressRangeHandler - Security Violation! - parameter block not in guest physical within SMRAM\n", 
+			Index));
+		DEBUG ((EFI_D_ERROR,
+			"%ld PeSmmVmcallMapAddressRangeHandler - AddressParameter = 0x%016llx",
 			Index,
 			AddressParameter));
 		return ERROR_STM_SECURITY_VIOLATION;
@@ -80,7 +83,9 @@ STM_STATUS
 	PhysAddressParameter = TranslateEPTGuestToHost(mGuestContextCommonSmm[VmType].EptPointer.Uint64, (UINTN)AddressParameter, 0L);
 	PhysAddressParameterEnd = TranslateEPTGuestToHost(mGuestContextCommonSmm[VmType].EptPointer.Uint64, (UINTN)AddressParameter + sizeof(STM_MAP_ADDRESS_RANGE_DESCRIPTOR), 0L);
 
-	DEBUG((EFI_D_INFO, "%ld PeSmmVmcallMapAddressRangeHandler - STM_API_MAP_ADDRESS_RANGE started\n", Index));
+	DEBUG((EFI_D_INFO,
+		"%ld PeSmmVmcallMapAddressRangeHandler - STM_API_MAP_ADDRESS_RANGE started\n",
+		Index));
 
 	if(((PhysAddressParameter == 0)||(PhysAddressParameterEnd == 0))||
 		((PhysAddressParameter & ~0xFFF) != (PhysAddressParameterEnd & ~0XFFF))) 
@@ -88,8 +93,11 @@ STM_STATUS
 		// TODO - need to address the potential of having a parameter block split across two pages
 		// currently the VM/PE is created as a single block...
 
-		DEBUG ((EFI_D_ERROR, "%ld PeSmmVmcallMapAddressRangeHandler - Security Violation! - parameter block not in guest physical address space or split across two pages\n", Index));
-		DEBUG ((EFI_D_ERROR, "%ld PeSmmVmcallMapAddressRangeHandler - PhysAddressParameter = 0x%016llx, PhysAddressParameterEnd = 0x%016llx\n",
+		DEBUG ((EFI_D_ERROR,
+			"%ld PeSmmVmcallMapAddressRangeHandler - Security Violation! - parameter block not in guest physical address space or split across two pages\n",
+			Index));
+		DEBUG ((EFI_D_ERROR,
+			"%ld PeSmmVmcallMapAddressRangeHandler - PhysAddressParameter = 0x%016llx, PhysAddressParameterEnd = 0x%016llx\n",
 			Index,
 			PhysAddressParameter, PhysAddressParameterEnd));
 		return ERROR_STM_SECURITY_VIOLATION;
@@ -102,25 +110,38 @@ STM_STATUS
 	CopyMem (&LocalBuffer, (VOID *)(UINTN)PhysAddressParameter, sizeof(LocalBuffer));
 	MapAddressRangeDescriptor = (STM_MAP_ADDRESS_RANGE_DESCRIPTOR *)&LocalBuffer;
 
-	DEBUG((EFI_D_ERROR, "%ld PeSmmVmcallMapAddressRangeHandler - MapAddressRange base: 0x%016llx Pages:0x%016llx\n", Index, MapAddressRangeDescriptor->PhysicalAddress, MapAddressRangeDescriptor->PageCount));
+	DEBUG((EFI_D_INFO,
+		"%ld PeSmmVmcallMapAddressRangeHandler - MapAddressRange base: 0x%016llx Pages:0x%016llx\n",
+		Index,
+		MapAddressRangeDescriptor->PhysicalAddress,
+		MapAddressRangeDescriptor->PageCount));
 
-	if (!IsGuestAddressValid ((UINTN)MapAddressRangeDescriptor->PhysicalAddress, STM_PAGES_TO_SIZE(MapAddressRangeDescriptor->PageCount), TRUE)) 
+	if (!IsGuestAddressValid ((UINTN)MapAddressRangeDescriptor->PhysicalAddress,
+					STM_PAGES_TO_SIZE(MapAddressRangeDescriptor->PageCount),
+					TRUE)) 
 	{
-		DEBUG ((EFI_D_ERROR, "%ld PeSmmVmcallMapAddressRangeHandler [ Security Violation!\n", Index));
+		DEBUG ((EFI_D_ERROR,
+			"%ld PeSmmVmcallMapAddressRangeHandler [ Security Violation!\n",
+			Index));
 		return ERROR_STM_SECURITY_VIOLATION;
 	}
 
 	if (MapAddressRangeDescriptor->PageCount == 0) 
 	{
-		DEBUG((EFI_D_ERROR, "%ld PeSmmVmcallMapAddressRangeHandler - Error - zero address range requested\n", Index));
+		DEBUG((EFI_D_ERROR,
+			"%ld PeSmmVmcallMapAddressRangeHandler - Error - zero address range requested\n",
+			Index));
 		return ERROR_STM_PAGE_NOT_FOUND;
 	}
 
-	if (((MapAddressRangeDescriptor->PatCacheType > UC) && (MapAddressRangeDescriptor->PatCacheType != FOLLOW_MTRR)) ||
+	if (((MapAddressRangeDescriptor->PatCacheType > UC) &&
+		(MapAddressRangeDescriptor->PatCacheType != FOLLOW_MTRR)) ||
 		(MapAddressRangeDescriptor->PatCacheType == 2) ||
 		(MapAddressRangeDescriptor->PatCacheType == 3) ) 
 	{
-		DEBUG((EFI_D_ERROR, "%ld PeSmmVmcallMapAddressRangeHandler - Error - STM cache type not supported\n", Index));
+		DEBUG((EFI_D_ERROR,
+			"%ld PeSmmVmcallMapAddressRangeHandler - Error - STM cache type not supported\n",
+			Index));
 		return ERROR_STM_CACHE_TYPE_NOT_SUPPORTED;
 	}
 
@@ -162,12 +183,19 @@ STM_STATUS
 		count++){}
 	count++;   // count the last element
 
-	PhysAddressParameter = TranslateEPTGuestToHost(mGuestContextCommonSmm[VmType].EptPointer.Uint64, (UINTN)AddressParameter, 0L);
-	PhysAddressParameterEnd = TranslateEPTGuestToHost(mGuestContextCommonSmm[VmType].EptPointer.Uint64, (UINTN)AddressParameter + (sizeof(VMCSFIELDOFFSET) * count), 0L);
+	PhysAddressParameter = TranslateEPTGuestToHost(mGuestContextCommonSmm[VmType].EptPointer.Uint64,
+							(UINTN)AddressParameter,
+							0L);
+	PhysAddressParameterEnd = TranslateEPTGuestToHost(mGuestContextCommonSmm[VmType].EptPointer.Uint64,
+							(UINTN)AddressParameter + (sizeof(VMCSFIELDOFFSET) * count),
+							0L);
 
 	// EBX:ECX - STM_MAP_ADDRESS_RANGE_DESCRIPTOR
-	DEBUG ((EFI_D_INFO, "%ld PE-STM_API_GET_VMCS_MAP: AddressParameter: 0x%016llx PhysAddressParameter: 0x%016llx\n", 
-		Index, AddressParameter, PhysAddressParameter));
+	DEBUG ((EFI_D_INFO,
+		"%ld PE-STM_API_GET_VMCS_MAP: AddressParameter: 0x%016llx PhysAddressParameter: 0x%016llx\n", 
+		Index,
+		AddressParameter,
+		PhysAddressParameter));
 
 	// bug bug - need to make sure address is in part of the app that is in SMRAM..
 
@@ -176,11 +204,14 @@ STM_STATUS
 		((PhysAddressParameter & ~0xFFF) != (PhysAddressParameterEnd & ~0XFFF)))
 	{
 		// TODO - need to address the potential of having a parameter block split across tow oages
-		DEBUG ((EFI_D_ERROR, "%ld Security Violation! - parameter block not in guest physical address space or split across two pages\n",
+		DEBUG ((EFI_D_ERROR,
+			"%ld Security Violation! - parameter block not in guest physical address space or split across two pages\n",
 			Index));
-		DEBUG ((EFI_D_ERROR, "%ld PhysAddressParameter = 0x%016llx, PhysAddressParameterEnd = 0x%016llx\n",
+		DEBUG ((EFI_D_ERROR,
+			"%ld PhysAddressParameter = 0x%016llx, PhysAddressParameterEnd = 0x%016llx\n",
 			Index,
-			PhysAddressParameter, PhysAddressParameterEnd));
+			PhysAddressParameter,
+			PhysAddressParameterEnd));
 		return ERROR_STM_SECURITY_VIOLATION;
 	}
 #endif
@@ -192,7 +223,10 @@ STM_STATUS
 	// Copy data to local, to prevent time of check VS time of use attack
 	//
 
-	DEBUG((EFI_D_ERROR, "%ld Size of VMCSFIELDOFFSET buffer is 0x%lx\n", Index, (sizeof(VMCSFIELDOFFSET) * count)));
+	DEBUG((EFI_D_INFO,
+		"%ld Size of VMCSFIELDOFFSET buffer is 0x%lx\n",
+		Index,
+		(sizeof(VMCSFIELDOFFSET) * count)));
 
 	VTable = (void *) VmcsFieldOffsetTable;
 	CopyMem((VOID *)(UINTN)PhysAddressParameter, VTable , (sizeof(VMCSFIELDOFFSET) * count));
@@ -263,10 +297,9 @@ VOID
 
 	StmVmcallHandler = GetPeSmmVmcallHandlerByIndex (ReadUnaligned32 ((UINT32 *)&Reg->Rax));
 	if (StmVmcallHandler == NULL) {
-		DEBUG ((EFI_D_INFO, "%ld PeSmmVmcallHandler - GetPeSmmVmcallHandlerByIndex - 0x%llx!\n", 
-			Index, (UINTN)ReadUnaligned32 ((UINT32 *)&Reg->Rax)));
-		// Should not happen
-		//CpuDeadLoop ();
+		DEBUG ((EFI_D_ERROR, "%ld PeSmmVmcallHandler - GetPeSmmVmcallHandlerByIndex (no handler) - 0x%llx!\n",
+			Index,
+			ReadUnaligned32 ((UINT32 *)&Reg->Rax)));
 		Status = ERROR_INVALID_API;
 	} else {
 		AddressParameter = ReadUnaligned32 ((UINT32 *)&Reg->Rbx) + LShiftU64 (ReadUnaligned32 ((UINT32 *)&Reg->Rcx), 32);
@@ -279,7 +312,8 @@ VOID
 	} else {
 		VmWriteN (VMCS_N_GUEST_RFLAGS_INDEX, VmReadN(VMCS_N_GUEST_RFLAGS_INDEX) | RFLAGS_CF);
 	}
-	VmWriteN (VMCS_N_GUEST_RIP_INDEX, VmReadN (VMCS_N_GUEST_RIP_INDEX) + VmRead32 (VMCS_32_RO_VMEXIT_INSTRUCTION_LENGTH_INDEX));
+	VmWriteN (VMCS_N_GUEST_RIP_INDEX,
+			VmReadN (VMCS_N_GUEST_RIP_INDEX) + VmRead32 (VMCS_32_RO_VMEXIT_INSTRUCTION_LENGTH_INDEX));
 
 	return ;
 }

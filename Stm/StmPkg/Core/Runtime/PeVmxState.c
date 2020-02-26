@@ -59,11 +59,15 @@ int GetMultiProcessorState(UINT32 CpuIndex)
 	ROOT_VMX_STATE * RootState;   // = (ROOT_VMX_STATE *) (NumProcessors + sizeof(*NumProcessors));
 	UINT32 CpuNum;
 
-	DEBUG((EFI_D_ERROR, "%ld GetMultiProcessorState - Started\n", CpuIndex));
+	DEBUG((EFI_D_INFO,
+		"%ld GetMultiProcessorState - Started\n",
+		CpuIndex));
 
 	if(PeVmData[PeType].SharedPageStm == NULL)
 	{
-		DEBUG((EFI_D_ERROR, "%ld GetMultiProcessorState - SharedPageStm is NULL, not gathering state\n", CpuIndex));
+		DEBUG((EFI_D_ERROR,
+			"%ld GetMultiProcessorState - SharedPageStm is NULL, not gathering state\n",
+			CpuIndex));
 		return -2;
 	}
 	// first clear out the data structures and set the number of processors
@@ -81,7 +85,10 @@ int GetMultiProcessorState(UINT32 CpuIndex)
 
 	if(InterlockedCompareExchange32(&PeSmiControl.PeSmiState, PESMINULL, PESMIPSMI) != PESMINULL) //&PeSmiControl.PeSmiState = 1;
 	{
-		DEBUG((EFI_D_ERROR, "%ld x - Aborting, SMI handler already there. PeSmiState %ld\n", CpuIndex, PeSmiControl.PeSmiState));
+		DEBUG((EFI_D_INFO,
+			"%ld x - Aborting, SMI handler already there. PeSmiState %ld\n",
+			CpuIndex,
+			PeSmiControl.PeSmiState));
 		return -1;                   // need to tell about smi handler is already there
 	}
 
@@ -108,7 +115,10 @@ int GetMultiProcessorState(UINT32 CpuIndex)
 	}
 
 	
-	DEBUG((EFI_D_ERROR, "%ld GetMultiProcessorState - Completed. PeSmiState: %ld\n", CpuIndex, PeSmiControl.PeSmiState));
+	DEBUG((EFI_D_INFO,
+		"%ld GetMultiProcessorState - Completed. PeSmiState: %ld\n",
+		CpuIndex,
+		PeSmiControl.PeSmiState));
 	return 0;
 }
 
@@ -176,7 +186,7 @@ void GetRootVmxState(UINT32 CpuIndex, ROOT_VMX_STATE * RootState)
 			HostRootVMCS = RootState->LinkVMCS;
 			//HostRootVMCS = VmRead64(VMCS_64_GUEST_VMCS_LINK_PTR_INDEX);
 			RootState->VmxState = VMX_STATE_ROOT;
-			//DEBUG((EFI_D_ERROR, "%ld GetRootVmxState (%d): execVMCS is vmxon: 0x%016llx using VMCS_LINK_POINTER\n",
+			//DEBUG((EFI_D_DEBUG, "%ld GetRootVmxState (%d): execVMCS is vmxon: 0x%016llx using VMCS_LINK_POINTER\n",
 				//CpuIndex, RootState->VmcsType, HostRootVMCS));
 		}
 		else
@@ -185,7 +195,7 @@ void GetRootVmxState(UINT32 CpuIndex, ROOT_VMX_STATE * RootState)
 			RootState->VmcsType = 2;
 			//HostRootVMCS = VmRead64(VMCS_64_GUEST_VMCS_LINK_PTR_INDEX);
 			RootState->VmxState = VMX_STATE_ROOT;
-			//DEBUG((EFI_D_ERROR, "%ld GetRootVmxState (%d): execVMCS is vmxon: But LinkVMCS is 0xFFFFFFFFFFFFFFF so no current Vmcs. Using Executive Vmcs: %llx\n",
+			//DEBUG((EFI_D_DEBUG, "%ld GetRootVmxState (%d): execVMCS is vmxon: But LinkVMCS is 0xFFFFFFFFFFFFFFF so no current Vmcs. Using Executive Vmcs: %llx\n",
 			//	CpuIndex, RootState->VmcsType, HostRootVMCS));
 		}
 	}
@@ -196,7 +206,7 @@ void GetRootVmxState(UINT32 CpuIndex, ROOT_VMX_STATE * RootState)
 		RootState->VmcsType = 3;
 		HostRootVMCS = RootState->ExecutiveVMCS;
 		RootState->VmxState = VMX_STATE_GUEST;
-		//DEBUG((EFI_D_ERROR, "%ld GetRootVmxState (%d): execVMCS is guest VMCS: 0x%016llx using Executive VMCS\n",
+		//DEBUG((EFI_D_DEBUG, "%ld GetRootVmxState (%d): execVMCS is guest VMCS: 0x%016llx using Executive VMCS\n",
 			//CpuIndex, RootState->VmcsType, HostRootVMCS));
 	}
 
@@ -212,7 +222,7 @@ VmcsFlushStart:
 	{
 		// got here because the in-memory copy of the VMCS is different than 
 		// what is in the processor - so we need to flush
-		//DEBUG((EFI_D_ERROR, "%ld - GetRootState: RootGuestRIPMemory: 0x%016llx, Location: 0x%016llx\n", 
+		//DEBUG((EFI_D_DEBUG, "%ld - GetRootState: RootGuestRIPMemory: 0x%016llx, Location: 0x%016llx\n", 
 		//CpuIndex, RootGuestRIPMemory, ((UINTN)HostRootVMCS + (UINTN)VMCS_N_GUEST_RIP_OFFSET)));
 		// first create a dummy VMCS
 		VmxRevId = AsmReadMsr32(IA32_VMX_BASIC_MSR_INDEX);
@@ -222,8 +232,10 @@ VmcsFlushStart:
 		{
 			// ran out of memory - release everything and start over
 			// that way someone else hopefully gets a chance to complete
-			DEBUG((EFI_D_ERROR, "%ld - GetRootState: ran out of memory - so free everything and restart - Flushcount: %d\n",
-				CpuIndex, FlushCount));
+			DEBUG((EFI_D_INFO, 
+				"%ld - GetRootState: ran out of memory - so free everything and restart - Flushcount: %d\n",
+				CpuIndex,
+				FlushCount));
 			if(FlushCount == 0)
 				goto VmcsFlushStart;
 
@@ -244,9 +256,11 @@ VmcsFlushStart:
 
 	if(FlushCount > 0)
 	{
-		DEBUG((EFI_D_ERROR, "%ld GetRootVmxState - Flush necessary to get VMCS in sync. Flushcount=%d\n", 
-			CpuIndex, FlushCount));
-		//DEBUG((EFI_D_ERROR, "%ld GetRootVmxState: after Flush: VMCS_N_GUEST_RIP_MEMORY: 0x%016llx (test) \n", CpuIndex, RootGuestRIPMemory));
+		DEBUG((EFI_D_INFO,
+			"%ld GetRootVmxState - Flush necessary to get VMCS in sync. Flushcount=%d\n", 
+			CpuIndex,
+			FlushCount));
+		//DEBUG((EFI_D_INFO, "%ld GetRootVmxState: after Flush: VMCS_N_GUEST_RIP_MEMORY: 0x%016llx (test) \n", CpuIndex, RootGuestRIPMemory));
 		// release the buffers
 		for(i = 0; i < FlushCount; i++)
 		{
@@ -258,7 +272,7 @@ VmcsFlushStart:
 	//AsmVmPtrLoad(&HostRootVMCS);
 
 	RootState->HostRootVMCS = HostRootVMCS;
-	//DEBUG((EFI_D_ERROR, "%ld - GetRootVmxState:   HostRootVmcs 0x%016llx\n", CpuIndex, RootState->HostRootVMCS));
+	//DEBUG((EFI_D_DEBUG, "%ld - GetRootVmxState:   HostRootVmcs 0x%016llx\n", CpuIndex, RootState->HostRootVMCS));
 
 	RootGuestCR0_M  = *(UINT64 *)((UINTN)HostRootVMCS + (UINTN)VMCS_N_GUEST_CR0_OFFSET);
 	RootGuestCR3_M  = *(UINT64 *)((UINTN)HostRootVMCS + (UINTN)VMCS_N_GUEST_CR3_OFFSET);
@@ -275,7 +289,7 @@ VmcsFlushStart:
 #ifdef VMCSDEBUGPRINT
 	if(RootState->VmcsType !=2)  // only want active Vmcs
 	{
-		DEBUG((EFI_D_ERROR, "%ld GetRootVmxState (%d) HostRootVmcs 0x%016llx\n G_CR0 %llx\n G_CR3 %llx\n G_CR4 %llx\n G_GDTR %llx:%llx\n G_IDTR %llx:%llx\n G_RSP %llx\n G_RIP %llx\n", 
+		DEBUG((EFI_D_DEBUG, "%ld GetRootVmxState (%d) HostRootVmcs 0x%016llx\n G_CR0 %llx\n G_CR3 %llx\n G_CR4 %llx\n G_GDTR %llx:%llx\n G_IDTR %llx:%llx\n G_RSP %llx\n G_RIP %llx\n", 
 			CpuIndex,
 			RootState->VmcsType, 
 			RootState->HostRootVMCS,
@@ -289,7 +303,7 @@ VmcsFlushStart:
 			RootState->RootGuestRSP,
 			RootState->RootGuestRIP));
 
-		DEBUG((EFI_D_ERROR, "%ld GetRootVmxState (%d) (control) HostRootVmcs 0x%016llx\n VMXON %llx\n ExecutiveVMCS %llx\n LinkVMCS %llx\n EPT %llx\n",
+		DEBUG((EFI_D_DEBIG, "%ld GetRootVmxState (%d) (control) HostRootVmcs 0x%016llx\n VMXON %llx\n ExecutiveVMCS %llx\n LinkVMCS %llx\n EPT %llx\n",
 			CpuIndex,
 			RootState->VmcsType,
 			RootState->HostRootVMCS,
@@ -298,7 +312,7 @@ VmcsFlushStart:
 			RootState->LinkVMCS,
 			RootState->RootContEPT));
 
-		DEBUG((EFI_D_ERROR, "%ld GetRootVmxState (%d) (memory) HostRootVmcs 0x%016llx\n G_CR0m %llx\n G_CR3m %llx\n G_CR4m %llx\n G_GDTRm %llx:%llx\n G_IDTRm %llx:%llx\n G_RSPm %llx\n G_RIPm %llx\n", 
+		DEBUG((EFI_D_DEBUG, "%ld GetRootVmxState (%d) (memory) HostRootVmcs 0x%016llx\n G_CR0m %llx\n G_CR3m %llx\n G_CR4m %llx\n G_GDTRm %llx:%llx\n G_IDTRm %llx:%llx\n G_RSPm %llx\n G_RIPm %llx\n", 
 			CpuIndex,
 			//	"GetRootVmxState (memory)\n G_CR0m %llx\n G_CR3m %llx\n G_CR4m %llx\n G_GDTRm %llx:%llx\n G_IDTRm %llx:%llx\n G_RSPm %llx\n G_RIPm %llx\n C_ExecVMCSm %llx\n C_LinkVMCSm %llx\n",
 			RootState->VmcsType,
@@ -313,7 +327,7 @@ VmcsFlushStart:
 			RootGuestRSP_M,
 			RootGuestRIP_M));
 
-		DEBUG((EFI_D_ERROR, "%ld GetRootVmxState (%d) (memory) HostRootVmcs 0x%016llx\n C_ExecVMCSm %llx\n C_LinkVMCSm %llx\n",
+		DEBUG((EFI_D_DEBUG, "%ld GetRootVmxState (%d) (memory) HostRootVmcs 0x%016llx\n C_ExecVMCSm %llx\n C_LinkVMCSm %llx\n",
 			CpuIndex,
 			RootState->VmcsType,
 			RootState->HostRootVMCS,
@@ -321,7 +335,7 @@ VmcsFlushStart:
 			RootContLinkVmcs_M));
 	}
 #endif
-	//DEBUG((EFI_D_ERROR, "%ld GetRootVmxState: VMCS_N_GUEST_RIP_MEMORY: 0x%016llx VMCS_N_GUEST_RIP:  0x%016llx, Location: 0x%016llx (test) \n", 
+	//DEBUG((EFI_D_DEBUG, "%ld GetRootVmxState: VMCS_N_GUEST_RIP_MEMORY: 0x%016llx VMCS_N_GUEST_RIP:  0x%016llx, Location: 0x%016llx (test) \n", 
 	//	CpuIndex, RootGuestRIP_M, RootState->RootGuestRIP, ((UINTN)HostRootVMCS + (UINTN)VMCS_N_GUEST_RIP_OFFSET)));
 
 	// need to save the root vmx host structures
@@ -362,7 +376,7 @@ VmcsFlushStart:
 #ifdef VMCSDEBUGPRINT
 	if(RootState->VmcsType != 2)
 	{
-		DEBUG((EFI_D_ERROR, "%ld GetRootVmxState (%d) \n H_CR0 %llx\n H_CR3 %llx\n H_CR4 %llx\n H_GDTR %llx\n H_IDTR %llx\n H_RSP %llx\n H_RIP %llx\n H_EPT %llx\n", 
+		DEBUG((EFI_D_DEBUG, "%ld GetRootVmxState (%d) \n H_CR0 %llx\n H_CR3 %llx\n H_CR4 %llx\n H_GDTR %llx\n H_IDTR %llx\n H_RSP %llx\n H_RIP %llx\n H_EPT %llx\n", 
 			CpuIndex,
 			RootState->VmcsType,
 			RootState->RootHostCR0,
@@ -421,26 +435,36 @@ void PrintVmxState(UINT32 CpuIndex, ROOT_VMX_STATE * RootState)
 
 		if(RootState->LinkVMCS != 0xFFFFFFFFFFFFFFFF)
 		{
-			DEBUG((EFI_D_ERROR, "%ld PrintVmxState (%d): execVMCS is vmxon: 0x%016llx using VMCS_LINK_POINTER\n",
-				CpuIndex, RootState->VmcsType, RootState->LinkVMCS));
+			DEBUG((EFI_D_INFO,
+				"%ld PrintVmxState (%d): execVMCS is vmxon: 0x%016llx using VMCS_LINK_POINTER\n",
+				CpuIndex,
+				RootState->VmcsType,
+				RootState->LinkVMCS));
 		}
 		else
 		{
-			DEBUG((EFI_D_ERROR, "%ld PrintVmxState (%d): execVMCS is vmxon: But LinkVMCS is 0xFFFFFFFFFFFFFFF so no current Vmcs. Using Executive Vmcs: %llx\n",
-				CpuIndex, RootState->VmcsType, RootState->ExecutiveVMCS));
+			DEBUG((EFI_D_INFO,
+				"%ld PrintVmxState (%d): execVMCS is vmxon: But LinkVMCS is 0xFFFFFFFFFFFFFFF so no current Vmcs. Using Executive Vmcs: %llx\n",
+				CpuIndex,
+				RootState->VmcsType,
+				RootState->ExecutiveVMCS));
 		}
 	}
 	else
 	{
 		// in guest operation, so our VMCS of interest is in the executive-VMCS field
 
-		DEBUG((EFI_D_ERROR, "%ld PrintVmxState (%d): execVMCS is guest VMCS: 0x%016llx using Executive VMCS\n",
-			CpuIndex, RootState->VmcsType, RootState->ExecutiveVMCS));
+		DEBUG((EFI_D_INFO,
+			"%ld PrintVmxState (%d): execVMCS is guest VMCS: 0x%016llx using Executive VMCS\n",
+			CpuIndex,
+			RootState->VmcsType,
+			RootState->ExecutiveVMCS));
 	}
 
 		if(RootState->VmcsType !=2)  // only want active Vmcs
 	{
-		DEBUG((EFI_D_ERROR, "%ld PrintVmxState (%d) HostRootVmcs 0x%016llx\n G_CR0 %llx\n G_CR3 %llx\n G_CR4 %llx\n G_GDTR %llx:%llx\n G_IDTR %llx:%llx\n G_RSP %llx\n G_RIP %llx\n", 
+		DEBUG((EFI_D_INFO,
+			"%ld PrintVmxState (%d) HostRootVmcs 0x%016llx\n G_CR0 %llx\n G_CR3 %llx\n G_CR4 %llx\n G_GDTR %llx:%llx\n G_IDTR %llx:%llx\n G_RSP %llx\n G_RIP %llx\n", 
 			CpuIndex,
 			RootState->VmcsType, 
 			RootState->HostRootVMCS,
@@ -454,7 +478,8 @@ void PrintVmxState(UINT32 CpuIndex, ROOT_VMX_STATE * RootState)
 			RootState->RootGuestRSP,
 			RootState->RootGuestRIP));
 
-		DEBUG((EFI_D_ERROR, "%ld PrintVmxState (%d) (control) HostRootVmcs 0x%016llx\n VMXON %llx\n ExecutiveVMCS %llx\n LinkVMCS %llx\n EPT %llx\n",
+		DEBUG((EFI_D_INFO,
+			"%ld PrintVmxState (%d) (control) HostRootVmcs 0x%016llx\n VMXON %llx\n ExecutiveVMCS %llx\n LinkVMCS %llx\n EPT %llx\n",
 			CpuIndex,
 			RootState->VmcsType,
 			RootState->HostRootVMCS,
@@ -463,7 +488,7 @@ void PrintVmxState(UINT32 CpuIndex, ROOT_VMX_STATE * RootState)
 			RootState->LinkVMCS,
 			RootState->RootContEPT));
 
-		DEBUG((EFI_D_ERROR, "%ld PrintVmxState (%d) \n H_CR0 %llx\n H_CR3 %llx\n H_CR4 %llx\n H_GDTR %llx\n H_IDTR %llx\n H_RSP %llx\n H_RIP %llx\n H_EPT %llx\n", 
+		DEBUG((EFI_D_INFO, "%ld PrintVmxState (%d) \n H_CR0 %llx\n H_CR3 %llx\n H_CR4 %llx\n H_GDTR %llx\n H_IDTR %llx\n H_RSP %llx\n H_RIP %llx\n H_EPT %llx\n", 
 			CpuIndex,
 			RootState->VmcsType,
 			RootState->RootHostCR0,

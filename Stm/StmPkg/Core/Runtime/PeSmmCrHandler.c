@@ -24,8 +24,8 @@ SmmCrHandler (
 
 void PeCrHandler( IN UINT32 CpuIndex)
 {
-	DEBUG((EFI_D_ERROR, "%ld PeCrHandler - Entered\n", CpuIndex));
+	DEBUG((EFI_D_INFO, "%ld PeCrHandler - Entered\n", CpuIndex));
 	SmmCrHandler(CpuIndex);   // use the intel handler since it provides the necessary functionality
-	DEBUG((EFI_D_ERROR, "%ld PeCrHander - done\n", CpuIndex));
+	DEBUG((EFI_D_INFO, "%ld PeCrHander - done\n", CpuIndex));
 	return;
 }

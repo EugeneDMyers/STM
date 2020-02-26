@@ -76,7 +76,7 @@ static UINT16 pcie_read_config16(device_t dev, unsigned int whereat)
 	UINTN addr;
 
 	addr = ((UINTN) mHostContextCommon.PciExpressBaseAddress) | dev | whereat;
-	//DEBUG((EFI_D_ERROR, "pcie_read_config16 %x\n", addr));
+	//DEBUG((EFI_D_DEBUG, "pcie_read_config16 %x\n", addr));
 	return read16(addr);
 }
 
@@ -85,7 +85,7 @@ static UINT32 pcie_read_config32(device_t dev, unsigned int whereat)
 	UINTN addr;
 
 	addr = ((UINTN) mHostContextCommon.PciExpressBaseAddress) | dev | whereat;
-	//DEBUG((EFI_D_ERROR, "pcie_read_config32 %x\n", addr));
+	//DEBUG((EFI_D_DEBUG, "pcie_read_config32 %x\n", addr));
 	return read32(addr);
 }
 
@@ -100,7 +100,7 @@ static void pcie_write_config16(device_t dev, unsigned int whereat, UINT16 Reg16
 
 static device_t get_pcu_dev(void)
 {
-	//DEBUG((EFI_D_ERROR, "get_pcu_dev - return %x\n", PCI_DEV(0, PCU_DEV, 0)));
+	//DEBUG((EFI_D_DEBUG, "get_pcu_dev - return %x\n", PCI_DEV(0, PCU_DEV, 0)));
 	return PCI_DEV(0, PCU_DEV, 0);
 }
 
@@ -117,8 +117,11 @@ void StartTimer(void)
 
 	smi_en |= PERIODIC_EN;
 
-	//DEBUG((EFI_D_ERROR, "-- StartSwTimer pmbase: %x smi_en: %x \n", pmbase, smi_en));
-	DEBUG((EFI_D_ERROR, "StartTimer - smi_en: 0x%08lx smi_sts: 0x%08lx\n", smi_en, smi_sts));
+	//DEBUG((EFI_D_INFO, "-- StartSwTimer pmbase: %x smi_en: %x \n", pmbase, smi_en));
+	DEBUG((EFI_D_INFO,
+		"StartTimer - smi_en: 0x%08lx smi_sts: 0x%08lx\n",
+		smi_en,
+		smi_sts));
 	IoWrite32(pmbase + SMI_STS, PERIODIC_STS);
 	IoWrite32(pmbase + SMI_EN, smi_en);
 }
@@ -130,8 +133,8 @@ void SetEndOfSmi(void)
 	UINT32 smi_en = IoRead32(pmbase + SMI_EN);
 	smi_en |= EOS_EN;  // set the bit
 
-	//DEBUG((EFI_D_ERROR, "-- StartSwTimer pmbase: %x smi_en: %x \n", pmbase, smi_en));
-	//DEBUG((EFI_D_ERROR, "-- SW Timer Started - smi_en: 0x%08lx smi_sts: 0x%08lx\n", smi_en, smi_sts));
+	//DEBUG((EFI_D_DEBUG, "-- StartSwTimer pmbase: %x smi_en: %x \n", pmbase, smi_en));
+	//DEBUG((EFI_D_DEBUG, "-- SW Timer Started - smi_en: 0x%08lx smi_sts: 0x%08lx\n", smi_en, smi_sts));
 
 	IoWrite32(pmbase + SMI_EN, smi_en);
 	DEBUG((EFI_D_ERROR, "SetEndOfSmi smi_en: 0x%08lx smi_sts: 0x%08lx\n", IoRead32(pmbase + SMI_EN), IoRead32(pmbase + SMI_STS)));
@@ -141,7 +144,11 @@ void SetEndOfSmi(void)
 void PrintSmiEnRegister(UINT32 Index)
 {
 	UINT16 pmbase = get_pmbase();
-	DEBUG((EFI_D_ERROR, "%ld PrintSmiEnRegister smi_en: 0x%08x smi_sts: 0x%08x\n", Index, IoRead32(pmbase + SMI_EN), IoRead32(pmbase + SMI_STS)));
+	DEBUG((EFI_D_INFO,
+		"%ld PrintSmiEnRegister smi_en: 0x%08x smi_sts: 0x%08x\n",
+		Index,
+		IoRead32(pmbase + SMI_EN),
+		IoRead32(pmbase + SMI_STS)));
 }
 
 void AckTimer(void)
@@ -150,7 +157,10 @@ void AckTimer(void)
 	
 	IoWrite32(pmbase + SMI_STS, PERIODIC_STS);
 	
-	DEBUG((EFI_D_ERROR, "AckTimer - smi_en: 0x%08lx smi_sts: 0x%08lx\n", IoRead32(pmbase + SMI_EN), IoRead32(pmbase + SMI_STS)));
+	DEBUG((EFI_D_INFO,
+		"AckTimer - smi_en: 0x%08lx smi_sts: 0x%08lx\n",
+		IoRead32(pmbase + SMI_EN),
+		IoRead32(pmbase + SMI_STS)));
 }
 
 void StopSwTimer(void)
@@ -161,8 +171,11 @@ void StopSwTimer(void)
 	smi_en &= ~PERIODIC_EN;
 	IoWrite32(pmbase + SMI_EN, smi_en);
 	
-	//DEBUG((EFI_D_ERROR, "-- SW Timer Stopped - pre-smi_en %x post-smi_en: %x\n", pre_smi_en, post_smi_en));
-	DEBUG((EFI_D_ERROR, "StopSwTimer - smi_en: 0x%08lx smi_sts: 0x%08lx\n", IoRead32(pmbase + SMI_EN), IoRead32(pmbase + SMI_STS)));
+	//DEBUG((EFI_D_INFO, "-- SW Timer Stopped - pre-smi_en %x post-smi_en: %x\n", pre_smi_en, post_smi_en));
+	DEBUG((EFI_D_INFO,
+		"StopSwTimer - smi_en: 0x%08lx smi_sts: 0x%08lx\n",
+		IoRead32(pmbase + SMI_EN),
+		IoRead32(pmbase + SMI_STS)));
 }
 
 int CheckTimerSTS(UINT32 Index)
@@ -170,16 +183,19 @@ int CheckTimerSTS(UINT32 Index)
 	UINT16 pmbase = get_pmbase();
 	UINT32 smi_sts = IoRead32(pmbase + SMI_STS);
 
-	//DEBUG((EFI_D_ERROR, "%ld CheckTimerSTS - 0x%08lx\n", Index, smi_sts));
+	//DEBUG((EFI_D_DEBUG, "%ld CheckTimerSTS - 0x%08lx\n", Index, smi_sts));
 
 	if((smi_sts & PERIODIC_STS) == PERIODIC_STS)
 	{
-		DEBUG((EFI_D_ERROR, "%ld CheckTimerSTS - Timer Interrupt Detected\n", Index, smi_sts));
+		DEBUG((EFI_D_INFO,
+			"%ld CheckTimerSTS - Timer Interrupt Detected\n",
+			Index,
+			smi_sts));
 		return 1;
 	}
 	else
 	{
-		//DEBUG((EFI_D_ERROR, "%ld CheckTimerSTS - No Timer Interrupt Detected\n", Index, smi_sts));
+		//DEBUG((EFI_D_DEBUG, "%ld CheckTimerSTS - No Timer Interrupt Detected\n", Index, smi_sts));
 		return 0;
 	}
 }

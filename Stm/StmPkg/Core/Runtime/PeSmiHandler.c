@@ -43,11 +43,11 @@ UINT32 PeSmiHandler(UINT32 CpuIndex)
 	UINT32 CpuNum;
 
 	InterlockedCompareExchange32(&PeSmiControl.PeSmiState, PESMINULL, PESMIHSMI);
-		//DEBUG((EFI_D_ERROR, "%ld PeSmiHandler - CurrPeSmiState %ld\n", CpuIndex, PeSmiControl.PeSmiState));
+		//DEBUG((EFI_D_DEBUG, "%ld PeSmiHandler - CurrPeSmiState %ld\n", CpuIndex, PeSmiControl.PeSmiState));
 
 	if(PeSmiControl.PeCpuIndex == (INT32)CpuIndex )  // when the pe/vm comes in...
 	{
-		//DEBUG((EFI_D_ERROR, "%ld PeSmiHandler - VM/PE responded to SMI, CurrPeSmiState %ld\n", CpuIndex, PeSmiControl.PeSmiState));
+		//DEBUG((EFI_D_DEBUG, "%ld PeSmiHandler - VM/PE responded to SMI, CurrPeSmiState %ld\n", CpuIndex, PeSmiControl.PeSmiState));
 		InterlockedCompareExchange32(&PeSmiControl.PeSmiState, PESMIPNMI2, PESMINULL);
 	}
 
@@ -98,7 +98,7 @@ UINT32 PeSmiHandler(UINT32 CpuIndex)
 			{
 				if(CheckTimerSTS(CpuIndex) != 0)
 				{
-					//DEBUG((EFI_D_ERROR, "%ld CheckAndGetState - (PESMIHSMI) Processing VM/PE startup PeSmiState: %d\n", CpuIndex, PeSmiControl.PeSmiState));
+					//DEBUG((EFI_D_DEBUG, "%ld CheckAndGetState - (PESMIHSMI) Processing VM/PE startup PeSmiState: %d\n", CpuIndex, PeSmiControl.PeSmiState));
 
 					InterlockedCompareExchange32(&PeSmiControl.PeSmiState, PESMIHSMI, PESMIHTMR);
 
@@ -147,7 +147,7 @@ UINT32 PeSmiHandler(UINT32 CpuIndex)
 		if(InterlockedCompareExchange32(&PeSmiControl.PeSmiState, PESMIHTMR, PESMIHTMR) == PESMIHTMR)
 		{
 			NumProcessors = (UINT64 *) PeVmData[PeType].SharedPageStm;
-			RootState = (ROOT_VMX_STATE *) ((char *)NumProcessors + 64);//sizeof(*NumProcessors) + sizeof(*NumProcessors));
+			RootState = (ROOT_VMX_STATE *) ((char *)NumProcessors + 64);
 
 			GetRootVmxState(CpuIndex, &RootState[CpuIndex]);
 			retvalue = 1;
@@ -177,7 +177,7 @@ UINT32 PeSmiHandler(UINT32 CpuIndex)
 	case PESMIHTMR:
 		// at this point, if this is set, the VM/PE is in the startup process and
 		// has set this so that at the next SMI, if it occurs while the VM/PE is active
-		// the pssmihandler can shoot down the VM/PE
+		// the pesmihandler can shoot down the VM/PE
 
 		// we have a one return because the VM/PE will stay in SMM
 
@@ -188,8 +188,10 @@ UINT32 PeSmiHandler(UINT32 CpuIndex)
 
 	default:
 
-		DEBUG((EFI_D_ERROR, "%ld CheckAndGetState (default) ERROR incorrect PeSmiState: %ld, setting to PESMINULL (0)\n",
-			CpuIndex, PeSmiControl.PeSmiState));
+		DEBUG((EFI_D_ERROR,
+			"%ld CheckAndGetState (default) ERROR incorrect PeSmiState: %ld, setting to PESMINULL (0)\n",
+			CpuIndex,
+			PeSmiControl.PeSmiState));
 		PeSmiControl.PeSmiState = PESMINULL;
 		return 0;
 	}

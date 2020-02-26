@@ -82,7 +82,11 @@ void SignalPeVm(UINT32 CpuIndex)
 	if(CpuIndex == 0)
 	{
 		UINT16 pmbase = get_pmbase();
-		DEBUG((EFI_D_ERROR, " %ld SignalPeVm ****SMI*** smi_en: %x smi_sts: %x\n", CpuIndex, IoRead32(pmbase + SMI_EN), IoRead32(pmbase + SMI_STS)));
+		DEBUG((EFI_D_DEBUG,
+			" %ld SignalPeVm ****SMI*** smi_en: %x smi_sts: %x\n",
+			CpuIndex,
+			IoRead32(pmbase + SMI_EN),
+			IoRead32(pmbase + SMI_STS)));
 	}
 #endif
 
@@ -167,12 +171,15 @@ void SendSmiToOtherProcessors(UINT32 CpuIndex)
 		break;
 
 	default:
-		DEBUG((EFI_D_ERROR, "%ld SendSmiToOtherProcessors - APIC mode invalid or APIC disabled\n", CpuIndex)); 
+		DEBUG((EFI_D_ERROR,
+			"%ld SendSmiToOtherProcessors - APIC mode invalid or APIC disabled\n",
+			CpuIndex)); 
 	}
 
 	APIC_REG(ICR_HIGH) = highSave;  //restore high
 
-	DEBUG((EFI_D_ERROR, "%ld SendSmiToOtherProcessors - Sent SMI to other processors command: high: 0x%08lx low: 0x%08lx APIC_MSR: 0x%p\n", 
+	DEBUG((EFI_D_INFO,
+		"%ld SendSmiToOtherProcessors - Sent SMI to other processors command: high: 0x%08lx low: 0x%08lx APIC_MSR: 0x%p\n", 
 		CpuIndex, 
 		high, 
 		low,

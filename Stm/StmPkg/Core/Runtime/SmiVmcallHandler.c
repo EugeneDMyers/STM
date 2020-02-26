@@ -784,7 +784,7 @@ SmiVmcallAddPermPeVmHandler (
 
   // - STM_ADD_PERM_PE_VM
   AcquireSpinLock (&mHostContextCommon.SmiVmcallLock);
-  DEBUG ((EFI_D_ERROR, "STM_API_ADD_PERM_VM:\n"));
+  DEBUG ((EFI_D_INFO, "STM_API_ADD_PERM_VM:\n"));
 
   if (!IsGuestAddressValid ((UINTN)AddressParameter, sizeof(PE_MODULE_INFO), TRUE)) {
     DEBUG ((EFI_D_ERROR, "Security Violation!\n"));
@@ -824,10 +824,14 @@ SmiVmcallAddPermPeVmNoRunHandler (
 
   // - STM_ADD_PERM_PE_VM
   AcquireSpinLock (&mHostContextCommon.SmiVmcallLock);
-  DEBUG ((EFI_D_ERROR, "%ld SmiVmcallAddPermPeVmNoRunHandler - STM_API_ADD_PERM_VM_NO_RUN:\n", Index));
+  DEBUG ((EFI_D_INFO, 
+		"%ld SmiVmcallAddPermPeVmNoRunHandler - STM_API_ADD_PERM_VM_NO_RUN:\n",
+		Index));
 
   if (!IsGuestAddressValid ((UINTN)AddressParameter, sizeof(PE_MODULE_INFO), TRUE)) {
-    DEBUG ((EFI_D_ERROR, "%ld SmiVmcallAddPermPeVmNoRunHandler - Security Violation!\n", Index));
+    DEBUG ((EFI_D_ERROR,
+		"%ld SmiVmcallAddPermPeVmNoRunHandler - Security Violation!\n",
+		Index));
     ReleaseSpinLock (&mHostContextCommon.SmiVmcallLock);
     return ERROR_STM_SECURITY_VIOLATION;
   }
@@ -864,7 +868,7 @@ SmiVmcallRunPeVmHandler (
   UINT32 PeType = PE_PERM;
   // ECX:EBX - STM_VMCS_DATABASE_REQUEST
   AcquireSpinLock (&mHostContextCommon.SmiVmcallLock);
-  DEBUG ((EFI_D_ERROR, " %ld STM_API_RUN_PERM_VM:\n", Index));
+  DEBUG ((EFI_D_INFO, " %ld STM_API_RUN_PERM_VM:\n", Index));
 
   if (!IsGuestAddressValid ((UINTN)AddressParameter, sizeof(PE_MODULE_INFO), TRUE)) {
     DEBUG ((EFI_D_ERROR, " %ld Security Violation!\n", Index));
@@ -993,7 +997,10 @@ SmiVmcallHandler (
   Reg = &mGuestContextCommonSmi.GuestContextPerCpu[Index].Register;
   StmVmcallHandler = GetSmiVmcallHandlerByIndex (ReadUnaligned32 ((UINT32 *)&Reg->Rax));
   if (StmVmcallHandler == NULL) {
-    DEBUG ((EFI_D_ERROR, "%ld SmiVmcallHandler - GetSmiVmcallHandlerByIndex- Invalid API entry  - %x!\n", Index, (UINTN)ReadUnaligned32 ((UINT32 *)&Reg->Rax)));
+    DEBUG ((EFI_D_ERROR,
+		"%ld SmiVmcallHandler - GetSmiVmcallHandlerByIndex- Invalid API entry  - %x!\n",
+		Index,
+		(UINTN)ReadUnaligned32 ((UINT32 *)&Reg->Rax)));
     Status = ERROR_INVALID_API;
   } else {
     AddressParameter = ReadUnaligned32 ((UINT32 *)&Reg->Rbx) + LShiftU64 (ReadUnaligned32 ((UINT32 *)&Reg->Rcx), 32);

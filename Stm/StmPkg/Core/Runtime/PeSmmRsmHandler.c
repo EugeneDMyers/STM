@@ -41,7 +41,11 @@ VOID
 	AsmVmPtrStore (&mGuestContextCommonSmm[VmType].GuestContextPerCpu[pCpuIndex].Vmcs);
 	Rflags = AsmVmPtrLoad (&mGuestContextCommonSmi.GuestContextPerCpu[pCpuIndex].Vmcs);
 	if ((Rflags & (RFLAGS_CF | RFLAGS_ZF)) != 0) {
-		DEBUG ((EFI_D_ERROR, "%ld PeRsmHandler - ERROR: AsmVmPtrLoad %016lx : %08x\n", (UINTN)CpuIndex, mGuestContextCommonSmi.GuestContextPerCpu[CpuIndex].Vmcs, Rflags));
+		DEBUG ((EFI_D_ERROR,
+			"%ld PeRsmHandler - ERROR: AsmVmPtrLoad %016lx : %08x\n",
+			(UINTN)CpuIndex,
+			mGuestContextCommonSmi.GuestContextPerCpu[CpuIndex].Vmcs,
+			Rflags));
 		DEBUG((EFI_D_ERROR, "%ld PeRsmHandler - CpuDeadLoop\n"));
 		CpuDeadLoop ();
 	}
@@ -51,7 +55,7 @@ VOID
 	//STM_PERF_END (Index, "ReadSyncSmmStateSaveArea", "RsmHandler");
 
 	//#if 0
-	DEBUG ((EFI_D_ERROR, "%ld PeRsmHandler start\n", (UINTN)CpuIndex));
+	DEBUG ((EFI_D_INFO, "%ld PeRsmHandler start\n", (UINTN)CpuIndex));
 	//#endif
 
 	//STM_PERF_END (Index, "OsSmiHandler", "RsmHandler");

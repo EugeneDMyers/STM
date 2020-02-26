@@ -96,7 +96,8 @@ void PeEPTViolationHandler( IN UINT32 CpuIndex)
 	VmexitQualification.UintN = VmReadN(VMCS_N_RO_EXIT_QUALIFICATION_INDEX);
 
 	DEBUG((EFI_D_ERROR, "%ld PeEPTViolationHandler - PE EPT Violation VMEXIT - Exit Qual: 0x%llx\n", 
-		CpuIndex, VmexitQualification.UintN));
+		CpuIndex,
+		VmexitQualification.UintN));
 
 	DEBUG((EFI_D_ERROR, "%ld PeEPTViolationHandler - Protected Execution VM attempted to access protected MEMORY at 0x%016llx\n",
 		CpuIndex,
@@ -130,9 +131,7 @@ void PeEPTViolationHandler( IN UINT32 CpuIndex)
         count = count + 3;
         Line[count] = '\n';
 	Line[count+ 1] = '\0';
-	DEBUG((EFI_D_ERROR, Line));
-
-	//DEBUG((EFI_D_ERROR, "%ld PeEPTViolationHandler - Access Allowed: %s\n", CpuIndex, AccessAllowed));
+	DEBUG((EFI_D_INFO, Line));
 
 	if(VmexitQualification.EptViolation.Ra == 1)
 		AccessRequested[0] = 'R';
@@ -198,7 +197,7 @@ void PeEPTViolationHandler( IN UINT32 CpuIndex)
 	DEBUG((EFI_D_ERROR, Line));
 	}
 	// take down the VM
-	//breakdownNonSmmVM(PE_VM_BAD_ACCESS, pStmVmm);
+
 	PostPeVmProc(PE_VM_BAD_ACCESS , CpuIndex, RELEASE_VM);
 	// rc = STM_SUCCESS;  // get past the fatal error stuff
 	return;
@@ -207,9 +206,13 @@ void PeEPTViolationHandler( IN UINT32 CpuIndex)
 void PeEPTMisconfigurationHandler( IN UINT32 CpuIndex)
 {		
 	EndTimeStamp = AsmReadTsc();
-	DEBUG((EFI_D_ERROR, "%ld PeEPTMisconfigurationHandler - PE EPT Misconfiguration VMEXIT\n", CpuIndex));
+	DEBUG((EFI_D_ERROR,
+		"%ld PeEPTMisconfigurationHandler - PE EPT Misconfiguration VMEXIT\n",
+		CpuIndex));
 	DumpVmcsAllField (CpuIndex);
-	DEBUG((EFI_D_ERROR, "ld PeEPTMisconfigurationHandler - CpuDeadLoop\n", CpuIndex));
+	DEBUG((EFI_D_ERROR,
+		"ld PeEPTMisconfigurationHandler - CpuDeadLoop\n",
+		CpuIndex));
 	CpuDeadLoop();
 	return;
 }
@@ -217,8 +220,12 @@ void PeEPTMisconfigurationHandler( IN UINT32 CpuIndex)
 void PeInvEPTHandler( IN UINT32 CpuIndex)
 {
 	EndTimeStamp = AsmReadTsc();
-	DEBUG((EFI_D_ERROR, "%ld PeInvEPTHandler - PE - Invalid EPT Handler not implemented \n", CpuIndex));
-	DEBUG((EFI_D_ERROR, "%ld PeInvEPTHandler - CpuDeadLoop\n", CpuIndex));
+	DEBUG((EFI_D_ERROR,
+		"%ld PeInvEPTHandler - PE - Invalid EPT Handler not implemented \n",
+		CpuIndex));
+	DEBUG((EFI_D_ERROR,
+		"%ld PeInvEPTHandler - CpuDeadLoop\n",
+		CpuIndex));
 	CpuDeadLoop();
 	return;
 }
@@ -239,7 +246,7 @@ void PeEptFree(IN UINT64 EptPointer)
 
 	EPT_ENTRY * L4Table = (EPT_ENTRY *)((UINTN)(EptPointer & ~0xFFF));
 
-	DEBUG ((EFI_D_ERROR, "PeEptFree Entered: %llx\n", L4Table));
+	DEBUG ((EFI_D_INFO, "PeEptFree Entered: %llx\n", L4Table));
 
 	if (mHostContextCommon.PhysicalAddressBits <= 39) {
 		NumberOfPml4EntriesNeeded = 1;
@@ -268,7 +275,9 @@ static void PeEptFreeL3(UINT64 Level3)
 
 	EPT_ENTRY * L3Table = (EPT_ENTRY *) ((UINTN)(Level3 & ~0xFFF));
 
-	DEBUG ((EFI_D_ERROR, "PeEptFreeL3 Entered: %llx\n", L3Table));
+	DEBUG ((EFI_D_INFO,
+		"PeEptFreeL3 Entered: %llx\n",
+		L3Table));
 	for(L2Entry = 0; L2Entry < 512; L2Entry++)
 	{
 		if(L3Table[L2Entry].Uint64 != 0)
@@ -287,7 +296,7 @@ static void PeEptFreeL2(IN UINT64 Level2)
 	UINTN L1Entry;
 
 	EPT_ENTRY * L2Table = (EPT_ENTRY *) ((UINTN)(Level2 & ~0xFFF));
-	DEBUG ((EFI_D_ERROR, "PeEptFreeL2 Entered: %llx\n", L2Table));
+	DEBUG ((EFI_D_INFO, "PeEptFreeL2 Entered: %llx\n", L2Table));
 	for(L1Entry = 0; L1Entry < 512; L1Entry ++)
 	{
 		if(L2Table[L1Entry].Uint64 != 0)
@@ -295,7 +304,10 @@ static void PeEptFreeL2(IN UINT64 Level2)
 			if(L2Table[L1Entry].Bits32.Sp != 1)
 			{
 				EPT_ENTRY * L1Table = (EPT_ENTRY *) ((UINTN)(L2Table[L1Entry].Uint64 & ~0xFFF));
-				DEBUG((EFI_D_ERROR, "PeEptFreeL2 - L1Table: 0x%016llx freed L1Entry: %d\n", L1Table, L1Entry));
+				DEBUG((EFI_D_INFO,
+					"PeEptFreeL2 - L1Table: 0x%016llx freed L1Entry: %d\n", 
+					L1Table,
+					L1Entry));
 				FreePages(L1Table, 1);
 			}
 		}
