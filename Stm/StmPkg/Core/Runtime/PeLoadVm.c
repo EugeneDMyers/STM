@@ -239,13 +239,16 @@ void LaunchPeVm(UINT32 PeType, UINT32 CpuIndex)
 
 	VmPeReady = 1;   // this will cause the interrupt handler to save the VM/PE and launch the VM/PE once the SMI is handled
 
-	if(InterlockedCompareExchange32(&PeSmiControl.PeSmiState, PESMIPNMI, PESMIHSMI) == PESMIHSMI)
+	if(InterlockedCompareExchange32(&PeSmiControl.PeSmiState, PESMINULL, PESMIPNMI) == PESMIHSMI) //old PESMIPNMI, PESMIPNMI
 	{
 		// if we are here, then an SMI has come in and the system is processing it
 		// we need to get out and let the system process the SMI and then restart
 
-		// PeSmiState = 2 means that the other processors are waitng for us to sync up 
+		// PeSmiState = PESIMHSMI (2) means that the other processors are waitng for us to sync up 
 		// so synch and then save up the state for when the processors come out of the SMI
+		
+		// This will cause the current PE/VM state to be saved and fake a return to the MLE
+		// which will cause the SMI for this processor to be fired
 
 		DEBUG((EFI_D_INFO,
 			"%ld LaunchPeVM - SMI detected during build - delaying launch to handle SMI\n",
@@ -261,6 +264,11 @@ void LaunchPeVm(UINT32 PeType, UINT32 CpuIndex)
 		DEBUG((EFI_D_INFO,
 			"%ld LaunchPeVM - NMI detected during build - delaying launch to handle SMI\n",
 			CpuIndex));
+
+		
+		// This will cause the current PE/VM state to be saved and fake a return to the MLE
+		// which will cause the SMI for this processor to be fired.  Since the NMI has been fired from one of
+		// the other processors, they are waiting this processor to join up.
 
 		save_Inter_PeVm(CpuIndex);
 		DEBUG((EFI_D_ERROR,
@@ -497,6 +505,7 @@ UINT32  PostPeVmProc(UINT32 rc, UINT32 CpuIndex, UINT32 mode)
 		}
 	}
 
+	// Suspend the PE/VM and start the SMI Handler.
 	if(mode == SUSPEND_VM)
 	{
 		// suspending PE/VM so that SMI handler can run
@@ -522,50 +531,6 @@ UINT32  PostPeVmProc(UINT32 rc, UINT32 CpuIndex, UINT32 mode)
 			CpuIndex));
 
 		mHostContextCommon.HostContextPerCpu[CpuIndex].GuestVmType = SMI_HANDLER;
-#ifdef OLDWAY
-		// set the SMI/Handler VMCS intoplace (note copied the Intel code - need to fix duplication...
-
-		STM_PERF_START (CpuIndex, 0, "WriteSyncSmmStateSaveArea", "SmiEventHandler");
-		WriteSyncSmmStateSaveArea (CpuIndex);
-		STM_PERF_END (CpuIndex, "WriteSyncSmmStateSaveArea", "SmiEventHandler");
-
-		AsmVmPtrStore (&mGuestContextCommonSmi.GuestContextPerCpu[CpuIndex].Vmcs);
-		Rflags = AsmVmPtrLoad (&mGuestContextCommonSmm[PeType].GuestContextPerCpu[0].Vmcs);
-		if ((Rflags & (RFLAGS_CF | RFLAGS_ZF)) != 0) {
-			DEBUG ((EFI_D_ERROR,
-				"%ld PostPeVmProc - ERROR: AsmVmPtrLoad - %016lx : %08x\n",
-				(UINTN)CpuIndex,
-				mGuestContextCommonSmm[PeType].GuestContextPerCpu[0].Vmcs,
-				Rflags));
-			DEBUG((EFI_D_ERROR,
-				"%ld, PostPeVmProc - CpuDeadLoop\n",
-				CpuIndex));
-			CpuDeadLoop ();
-		}
-
-		VmWriteN (VMCS_N_GUEST_RIP_INDEX,
-				(UINTN)mHostContextCommon.HostContextPerCpu[CpuIndex].TxtProcessorSmmDescriptor->SmmSmiHandlerRip);
-		VmWriteN (VMCS_N_GUEST_RSP_INDEX,
-				(UINTN)mHostContextCommon.HostContextPerCpu[CpuIndex].TxtProcessorSmmDescriptor->SmmSmiHandlerRsp);
-		VmWriteN (VMCS_N_GUEST_CR3_INDEX,
-				mGuestContextCommonSmm[PeType].GuestContextPerCpu[0].Cr3);
-
-		STM_PERF_START (CpuIndex, 0, "BiosSmmHandler", "SmiEventHandler");
-
-		if (mGuestContextCommonSmm[PeType].GuestContextPerCpu[0].Launched) {
-			Rflags = AsmVmResume (&mGuestContextCommonSmm[PeType].GuestContextPerCpu[0].Register);
-			// BUGBUG: - AsmVmLaunch if AsmVmResume fail
-			if (VmRead32 (VMCS_32_RO_VM_INSTRUCTION_ERROR_INDEX) == VmxFailErrorVmResumeWithNonLaunchedVmcs) {
-				//      DEBUG ((EFI_D_ERROR, "(STM):-(\n", (UINTN)Index));
-				Rflags = AsmVmLaunch (&mGuestContextCommonSmm[PeType].GuestContextPerCpu[0].Register);
-			}
-		} else {
-			mGuestContextCommonSmm[PeType].GuestContextPerCpu[0].Launched = TRUE;
-			Rflags = AsmVmLaunch (&mGuestContextCommonSmm[0].GuestContextPerCpu[CpuIndex].Register);
-			mGuestContextCommonSmm[PeType].GuestContextPerCpu[0].Launched = FALSE;
-		}
-#endif
-
 		if (mGuestContextCommonSmi.GuestContextPerCpu[CpuIndex].Launched) {
 			Rflags = AsmVmResume (&mGuestContextCommonSmi.GuestContextPerCpu[CpuIndex].Register);
 			// BUGBUG: - AsmVmLaunch if AsmVmResume fail

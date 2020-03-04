@@ -47,6 +47,7 @@ UINT32 PeSmiHandler(UINT32 CpuIndex)
 
 	if(PeSmiControl.PeCpuIndex == (INT32)CpuIndex )  // when the pe/vm comes in...
 	{
+		// The VM/PE comes in here and causes the state to be set to null
 		//DEBUG((EFI_D_DEBUG, "%ld PeSmiHandler - VM/PE responded to SMI, CurrPeSmiState %ld\n", CpuIndex, PeSmiControl.PeSmiState));
 		InterlockedCompareExchange32(&PeSmiControl.PeSmiState, PESMIPNMI2, PESMINULL);
 	}
