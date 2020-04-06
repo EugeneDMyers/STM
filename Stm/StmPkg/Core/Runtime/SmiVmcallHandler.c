@@ -175,6 +175,8 @@ SmiVmcallProtectResourceHandler (
 
   StmResource = (STM_RSC *)(UINTN)LocalBuffer;
 
+  DumpStmResource (StmResource);
+
   if (!IsResourceListValid (StmResource, TRUE)) {
     DEBUG ((EFI_D_ERROR, "IsResourceListValid fail!\n"));
     RawFreeResource (LocalBuffer);
@@ -250,6 +252,8 @@ SmiVmcallUnprotectResourceHandler (
     return ERROR_STM_MALFORMED_RESOURCE_LIST;
   }
   DEBUG ((EFI_D_INFO, "IsResourceListValid pass!\n"));
+
+  DumpStmResource (StmResource);
 
   DeleteProtectedResource (&mHostContextCommon.MleProtectedResource, StmResource);
 
@@ -737,7 +741,7 @@ SmiVmcallAddTempPeVmHandler (
 
   // STM_ADD_TEMP_PE
   AcquireSpinLock (&mHostContextCommon.SmiVmcallLock);
-  DEBUG ((EFI_D_INFO, "%ld STM_API_ADD_TEMP_VM:\n", Index));
+  DEBUG ((EFI_D_INFO, "STM_API_ADD_TEMP_VM:\n"));
 
   if (!IsGuestAddressValid ((UINTN)AddressParameter, sizeof(PE_MODULE_INFO), TRUE)) {
     DEBUG ((EFI_D_ERROR, "Security Violation!\n"));
@@ -780,7 +784,7 @@ SmiVmcallAddPermPeVmHandler (
 
   // - STM_ADD_PERM_PE_VM
   AcquireSpinLock (&mHostContextCommon.SmiVmcallLock);
-  DEBUG ((EFI_D_ERROR, "STM_API_ADD_PERM_VM:\n"));
+  DEBUG ((EFI_D_INFO, "STM_API_ADD_PERM_VM:\n"));
 
   if (!IsGuestAddressValid ((UINTN)AddressParameter, sizeof(PE_MODULE_INFO), TRUE)) {
     DEBUG ((EFI_D_ERROR, "Security Violation!\n"));
@@ -815,15 +819,19 @@ SmiVmcallAddPermPeVmNoRunHandler (
   IN UINT64  AddressParameter
   )
 {
-  STM_STATUS		Status;
-  PE_MODULE_INFO	LocalBuffer;
+  STM_STATUS                    Status;
+  PE_MODULE_INFO		LocalBuffer;
 
   // - STM_ADD_PERM_PE_VM
   AcquireSpinLock (&mHostContextCommon.SmiVmcallLock);
-  DEBUG ((EFI_D_ERROR, "%ld SmiVmcallAddPermPeVmNoRunHandler - STM_API_ADD_PERM_VM_NO_RUN:\n", Index));
+  DEBUG ((EFI_D_INFO, 
+		"%ld SmiVmcallAddPermPeVmNoRunHandler - STM_API_ADD_PERM_VM_NO_RUN:\n",
+		Index));
 
   if (!IsGuestAddressValid ((UINTN)AddressParameter, sizeof(PE_MODULE_INFO), TRUE)) {
-    DEBUG ((EFI_D_ERROR, "%ld SmiVmcallAddPermPeVmNoRunHandler - Security Violation!\n", Index));
+    DEBUG ((EFI_D_ERROR,
+		"%ld SmiVmcallAddPermPeVmNoRunHandler - Security Violation!\n",
+		Index));
     ReleaseSpinLock (&mHostContextCommon.SmiVmcallLock);
     return ERROR_STM_SECURITY_VIOLATION;
   }
@@ -854,13 +862,13 @@ SmiVmcallRunPeVmHandler (
   IN UINT64  AddressParameter
   )
 {
-  STM_STATUS		Status;
-  PE_MODULE_INFO	LocalBuffer;
+  STM_STATUS                    Status;
+  PE_MODULE_INFO		LocalBuffer;
 
   UINT32 PeType = PE_PERM;
   // ECX:EBX - STM_VMCS_DATABASE_REQUEST
   AcquireSpinLock (&mHostContextCommon.SmiVmcallLock);
-  DEBUG ((EFI_D_ERROR, " %ld STM_API_RUN_PERM_VM:\n", Index));
+  DEBUG ((EFI_D_INFO, " %ld STM_API_RUN_PERM_VM:\n", Index));
 
   if (!IsGuestAddressValid ((UINTN)AddressParameter, sizeof(PE_MODULE_INFO), TRUE)) {
     DEBUG ((EFI_D_ERROR, " %ld Security Violation!\n", Index));
@@ -885,7 +893,8 @@ SmiVmcallRunPeVmHandler (
 
 /**
 
-  This function is VMCALL handler for SMI.
+  This function instructs the STM to not allow for a
+  Permanent PE VM to be created.
 
   @param Index             CPU index
   @param AddressParameter  Addresss parameter
@@ -899,29 +908,29 @@ SmiVmcallEndPermVmHandler (
   IN UINT64  AddressParameter
   )
 {
-  STM_STATUS		Status;
-  PE_MODULE_INFO	LocalBuffer;
+  STM_STATUS                    Status;
+  PE_MODULE_INFO		LocalBuffer;
 
   // ECX:EBX - STM_VMCS_DATABASE_REQUEST
   AcquireSpinLock (&mHostContextCommon.SmiVmcallLock);
-  DEBUG ((EFI_D_ERROR, "%ld STM_API_END_PERM_VM:\n", Index));
+  DEBUG ((EFI_D_INFO, "STM_API_END_PERM_VM:\n"));
 
   // Check to see if there is an active PE VM, this
   // call will indicate an active PE VM
 
   if(PeVmData[PE_PERM].PeVmState == PE_VM_AVAIL)
   {
-       PeVmData[PE_PERM].PeVmState = PE_VM_OPT_OUT_PERM;
-       Status = STM_SUCCESS;
+  	PeVmData[PE_PERM].PeVmState = PE_VM_OPT_OUT_PERM;
+  	Status = STM_SUCCESS;
   }
   else
   {
-       if(PeVmData[PE_PERM].PeVmState == PE_VM_OPT_OUT_PERM)
-               Status = STM_SUCCESS;
-       else
-               Status = PE_VM_PERM_ALREADY_ESTABLISHED;
+	if(PeVmData[PE_PERM].PeVmState == PE_VM_OPT_OUT_PERM)
+		Status = STM_SUCCESS;
+	else
+		Status = PE_VM_PERM_ALREADY_ESTABLISHED;
   }
-
+  
   ReleaseSpinLock (&mHostContextCommon.SmiVmcallLock);
 
   return Status;
@@ -988,9 +997,10 @@ SmiVmcallHandler (
   Reg = &mGuestContextCommonSmi.GuestContextPerCpu[Index].Register;
   StmVmcallHandler = GetSmiVmcallHandlerByIndex (ReadUnaligned32 ((UINT32 *)&Reg->Rax));
   if (StmVmcallHandler == NULL) {
-    DEBUG ((EFI_D_ERROR, "%ld SmiVmcallHandler - GetSmiVmcallHandlerByIndex- Invalid API entry  - %x!\n",
-			Index,
-			(UINTN)ReadUnaligned32 ((UINT32 *)&Reg->Rax)));
+    DEBUG ((EFI_D_ERROR,
+		"%ld SmiVmcallHandler - GetSmiVmcallHandlerByIndex- Invalid API entry  - %x!\n",
+		Index,
+		(UINTN)ReadUnaligned32 ((UINT32 *)&Reg->Rax)));
     Status = ERROR_INVALID_API;
   } else {
     AddressParameter = ReadUnaligned32 ((UINT32 *)&Reg->Rbx) + LShiftU64 (ReadUnaligned32 ((UINT32 *)&Reg->Rcx), 32);

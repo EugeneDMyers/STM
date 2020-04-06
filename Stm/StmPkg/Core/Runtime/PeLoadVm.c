@@ -264,7 +264,6 @@ void LaunchPeVm(UINT32 PeType, UINT32 CpuIndex)
 		DEBUG((EFI_D_INFO,
 			"%ld LaunchPeVM - NMI detected during build - delaying launch to handle SMI\n",
 			CpuIndex));
-
 		
 		// This will cause the current PE/VM state to be saved and fake a return to the MLE
 		// which will cause the SMI for this processor to be fired.  Since the NMI has been fired from one of

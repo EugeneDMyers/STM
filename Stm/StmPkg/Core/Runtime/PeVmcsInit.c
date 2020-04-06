@@ -109,7 +109,7 @@ UINT32  SetupProtExecVm(UINT32 CpuIndex, UINT32 VM_Configuration, UINT32 mode, U
 				"%ld SetupProtExecVm - Allocated and cleared VMCS memory\n",
 				CpuIndex));
 		}
-		
+
 		DEBUG((EFI_D_INFO,
 			"%ld SetupProtExecVm - VMCS region allocated at %llx\n",
 			CpuIndex,
@@ -121,8 +121,7 @@ UINT32  SetupProtExecVm(UINT32 CpuIndex, UINT32 VM_Configuration, UINT32 mode, U
 		AsmVmPtrStore (&mGuestContextCommonSmi.GuestContextPerCpu[CpuIndex].Vmcs);
 		Rflags = AsmVmClear(&mGuestContextCommonSmi.GuestContextPerCpu[CpuIndex].Vmcs);
 		if ((Rflags & (RFLAGS_CF | RFLAGS_ZF)) != 0) {
-			
-				DEBUG ((EFI_D_ERROR,
+			DEBUG ((EFI_D_ERROR,
 				"%ld SetupProtExecVm - ERROR: AsmVmClear - %016lx : %08x\n", 
 				(UINTN)CpuIndex,
 				mGuestContextCommonSmm[PeType].GuestContextPerCpu[0].Vmcs,
