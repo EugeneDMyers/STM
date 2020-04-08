@@ -157,10 +157,12 @@ SmiVmcallProtectResourceHandler (
   if (mGuestContextCommonSmm[SMI_HANDLER].BiosHwResourceRequirementsPtr == 0) {
 		if (!IsResourceListValid ((STM_RSC *)(UINTN)mHostContextCommon.HostContextPerCpu[0].TxtProcessorSmmDescriptor->BiosHwResourceRequirementsPtr, FALSE)) {
 			ReleaseSpinLock (&mHostContextCommon.SmiVmcallLock);
-			DEBUG ((EFI_D_ERROR, "%ld SmiVmcallProtectResourceHandler - ValidateBiosResourceList fail!\n", Index));
+			DEBUG ((EFI_D_ERROR, "%ld SmiVmcallProtectResourceHandler - ValidateBiosResourceList fail!\n",
+				Index));
 			return ERROR_STM_MALFORMED_RESOURCE_LIST;
 	  }
-   mGuestContextCommonSmm[SMI_HANDLER].BiosHwResourceRequirementsPtr = (UINT64)(UINTN)DuplicateResource ((STM_RSC *)(UINTN)mHostContextCommon.HostContextPerCpu[0].TxtProcessorSmmDescriptor->BiosHwResourceRequirementsPtr);
+   mGuestContextCommonSmm[SMI_HANDLER].BiosHwResourceRequirementsPtr =
+	(UINT64)(UINTN)DuplicateResource ((STM_RSC *)(UINTN)mHostContextCommon.HostContextPerCpu[0].TxtProcessorSmmDescriptor->BiosHwResourceRequirementsPtr);
    RegisterBiosResource ((STM_RSC *)(UINTN)mGuestContextCommonSmm[SMI_HANDLER].BiosHwResourceRequirementsPtr);
   }
 
@@ -175,7 +177,7 @@ SmiVmcallProtectResourceHandler (
 
   StmResource = (STM_RSC *)(UINTN)LocalBuffer;
 
-  DumpStmResource (StmResource);
+  //DumpStmResource (StmResource);
 
   if (!IsResourceListValid (StmResource, TRUE)) {
     DEBUG ((EFI_D_ERROR, "IsResourceListValid fail!\n"));
@@ -253,7 +255,7 @@ SmiVmcallUnprotectResourceHandler (
   }
   DEBUG ((EFI_D_INFO, "IsResourceListValid pass!\n"));
 
-  DumpStmResource (StmResource);
+  //DumpStmResource (StmResource);
 
   DeleteProtectedResource (&mHostContextCommon.MleProtectedResource, StmResource);
 
