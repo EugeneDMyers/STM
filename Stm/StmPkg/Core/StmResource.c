@@ -1922,15 +1922,15 @@ RegisterBiosResource (
     RegisterBiosResource ((STM_RSC *)(UINTN)Resource->End.ResourceListContinuation);
   }
 }
-/**^M
-^M
-  This function returns the first STM resource of resource type.^M
-^M
-  @param Resource STM resource list^M
+/**
+
+  This function returns the first STM resource of resource type.
+
+  @param Resource STM resource list^
   @param RscType  resource type
-^M
-  @return STM resource^M
-^M
+
+  @return STM resource
+
 **/
 
 STM_RSC *
