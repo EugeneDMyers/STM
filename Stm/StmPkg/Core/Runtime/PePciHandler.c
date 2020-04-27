@@ -52,6 +52,9 @@ void SetTimerRate(UINT16 value);
 	(((DEV) & 0x1F) << 15) | \
 	(((FN) & 0x07) <<12))
 
+void PrintSmiEnRegister(UINT32 Index);
+extern STM_GUEST_CONTEXT_COMMON        mGuestContextCommonSmm[];
+
 typedef int device_t;
 
 static UINT16 pmbase = 0x0;
@@ -106,7 +109,25 @@ static device_t get_pcu_dev(void)
 
 UINT16 get_pmbase(void)
 {
-	return pcie_read_config16(get_pcu_dev(), D31F0_PMBASE ) & 0xFFF8;
+	if (pmbase == 0)
+	{
+		// find the pmbase in the BIOS resource list
+
+		STM_RSC *Resource;
+
+		// the pmbase is the first IO resource
+		Resource = GetStmFirstResource (
+				(STM_RSC *)mGuestContextCommonSmm[SMI_HANDLER].BiosHwResourceRequirementsPtr,
+				IO_RANGE);
+		if(Resource == NULL)
+			DEBUG((EFI_D_ERROR, "get_pmbase - Error pmbase not found in resource list\n"));
+		else
+		{
+			pmbase = Resource->Io.Base;
+			DEBUG((EFI_D_INFO, "get_pmbase - pmbase set at 0x%x\n", pmbase));
+		}
+	}
+	return pmbase;
 } 
 
 void StartTimer(void)
@@ -117,11 +138,7 @@ void StartTimer(void)
 
 	smi_en |= PERIODIC_EN;
 
-	//DEBUG((EFI_D_INFO, "-- StartSwTimer pmbase: %x smi_en: %x \n", pmbase, smi_en));
-	DEBUG((EFI_D_INFO,
-		"StartTimer - smi_en: 0x%08lx smi_sts: 0x%08lx\n",
-		smi_en,
-		smi_sts));
+	//DEBUG((EFI_D_INFO, "StartTimer - smi_en: 0x%08lx smi_sts: 0x%08lx\n", smi_en, smi_sts));
 	IoWrite32(pmbase + SMI_STS, PERIODIC_STS);
 	IoWrite32(pmbase + SMI_EN, smi_en);
 }
@@ -133,22 +150,17 @@ void SetEndOfSmi(void)
 	UINT32 smi_en = IoRead32(pmbase + SMI_EN);
 	smi_en |= EOS_EN;  // set the bit
 
-	//DEBUG((EFI_D_DEBUG, "-- StartSwTimer pmbase: %x smi_en: %x \n", pmbase, smi_en));
-	//DEBUG((EFI_D_DEBUG, "-- SW Timer Started - smi_en: 0x%08lx smi_sts: 0x%08lx\n", smi_en, smi_sts));
+	//DEBUG((EFI_D_INFO, "-- SetEndOfSmi pmbase: %x smi_en: %x \n", pmbase, smi_en));
 
 	IoWrite32(pmbase + SMI_EN, smi_en);
-	DEBUG((EFI_D_ERROR, "SetEndOfSmi smi_en: 0x%08lx smi_sts: 0x%08lx\n", IoRead32(pmbase + SMI_EN), IoRead32(pmbase + SMI_STS)));
+	//DEBUG((EFI_D_INFO, "SetEndOfSmi smi_en: 0x%08lx smi_sts: 0x%08lx\n", IoRead32(pmbase + SMI_EN), IoRead32(pmbase + SMI_STS)));
 
 }
 
 void PrintSmiEnRegister(UINT32 Index)
 {
 	UINT16 pmbase = get_pmbase();
-	DEBUG((EFI_D_INFO,
-		"%ld PrintSmiEnRegister smi_en: 0x%08x smi_sts: 0x%08x\n",
-		Index,
-		IoRead32(pmbase + SMI_EN),
-		IoRead32(pmbase + SMI_STS)));
+	DEBUG((EFI_D_INFO, "%ld PrintSmiEnRegister smi_en: 0x%08x smi_sts: 0x%08x\n", Index, IoRead32(pmbase + SMI_EN), IoRead32(pmbase + SMI_STS)));
 }
 
 void AckTimer(void)
@@ -157,10 +169,7 @@ void AckTimer(void)
 	
 	IoWrite32(pmbase + SMI_STS, PERIODIC_STS);
 	
-	DEBUG((EFI_D_INFO,
-		"AckTimer - smi_en: 0x%08lx smi_sts: 0x%08lx\n",
-		IoRead32(pmbase + SMI_EN),
-		IoRead32(pmbase + SMI_STS)));
+	//DEBUG((EFI_D_INFO, "AckTimer - smi_en: 0x%08lx smi_sts: 0x%08lx\n", IoRead32(pmbase + SMI_EN), IoRead32(pmbase + SMI_STS)));
 }
 
 void StopSwTimer(void)
@@ -170,12 +179,6 @@ void StopSwTimer(void)
 
 	smi_en &= ~PERIODIC_EN;
 	IoWrite32(pmbase + SMI_EN, smi_en);
-	
-	//DEBUG((EFI_D_INFO, "-- SW Timer Stopped - pre-smi_en %x post-smi_en: %x\n", pre_smi_en, post_smi_en));
-	DEBUG((EFI_D_INFO,
-		"StopSwTimer - smi_en: 0x%08lx smi_sts: 0x%08lx\n",
-		IoRead32(pmbase + SMI_EN),
-		IoRead32(pmbase + SMI_STS)));
 }
 
 int CheckTimerSTS(UINT32 Index)
@@ -187,15 +190,12 @@ int CheckTimerSTS(UINT32 Index)
 
 	if((smi_sts & PERIODIC_STS) == PERIODIC_STS)
 	{
-		DEBUG((EFI_D_INFO,
-			"%ld CheckTimerSTS - Timer Interrupt Detected\n",
-			Index,
-			smi_sts));
+		DEBUG((EFI_D_INFO, "%ld CheckTimerSTS - Timer Interrupt Detected\n", Index, smi_sts));
 		return 1;
 	}
 	else
 	{
-		//DEBUG((EFI_D_DEBUG, "%ld CheckTimerSTS - No Timer Interrupt Detected\n", Index, smi_sts));
+		//DEBUG((EFI_D_INFO "%ld CheckTimerSTS - No Timer Interrupt Detected\n", Index, smi_sts));
 		return 0;
 	}
 }
