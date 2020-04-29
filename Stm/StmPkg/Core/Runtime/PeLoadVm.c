@@ -36,7 +36,6 @@ static int CpuGetState = 0;
 void SetEndOfSmi(void);
 void StartTimer(void);
 void StopTimer(void);
-int CheckTimerSTS(UINT32 Index);
 void ClearTimerSTS(void);
 void SetMaxSwTimerInt(void);
 void SetMinSwTimerInt(void);
@@ -109,9 +108,12 @@ void LaunchPeVm(UINT32 PeType, UINT32 CpuIndex)
 	// load the shared page and region list addresses into the register save area
 	// so that the PE module will access to those addresses
 
-	mGuestContextCommonSmm[PeType].GuestContextPerCpu[0].Register.Rbx = (UINTN)PeVmData[PeType].UserModule.SharedPage;
-	mGuestContextCommonSmm[PeType].GuestContextPerCpu[0].Register.Rcx = (UINT64)PeVmData[PeType].UserModule.Segment;
-	mGuestContextCommonSmm[PeType].GuestContextPerCpu[0].Register.Rdx = (UINTN) PeVmData[PeType].UserModule.SharedStmPage;
+	mGuestContextCommonSmm[PeType].GuestContextPerCpu[0].Register.Rbx =
+		(UINTN)PeVmData[PeType].UserModule.SharedPage;
+	mGuestContextCommonSmm[PeType].GuestContextPerCpu[0].Register.Rcx =
+		(UINT64)PeVmData[PeType].UserModule.Segment;
+	mGuestContextCommonSmm[PeType].GuestContextPerCpu[0].Register.Rdx =
+		(UINTN) PeVmData[PeType].UserModule.SharedStmPage;
 
 	// check and make aure that the heap is cleared as requested
 
@@ -143,12 +145,16 @@ void LaunchPeVm(UINT32 PeType, UINT32 CpuIndex)
 		}
 	}
 
-	// setup the variables that are used in case an SMI is taken while the PE VM is running
+	// setup the variables that are used in case an SMI is taken
+	// while the PE VM is running
 
 	// this needs to be fixed if more than one PE/VM is running
 
-	PeSmiControl.PeNmiBreak = 1;    // when 1, a NMI has been sent to break the thread in PE_APIC_id
-	PeSmiControl.PeApicId = ReadLocalApicId ();    // APIC id of the thread that is executing the PE V<
+	// when 1, a NMI has been sent to break the thread in PE_APIC_id
+	PeSmiControl.PeNmiBreak = 1;
+
+	// APIC id of the thread that is executing the PE V<
+	PeSmiControl.PeApicId = ReadLocalApicId ();
 	PeSmiControl.PeCpuIndex = CpuIndex;
 	PeSmiControl.PeExec = 0;         // when 1 PE_APIC_ID is executing a
 	VmPeReady = 0;                   // set the ready gate
@@ -158,7 +164,8 @@ void LaunchPeVm(UINT32 PeType, UINT32 CpuIndex)
 		CpuIndex,
 		PeSmiControl.PeSmiState));
 
-	if(InterlockedCompareExchange32(&PeSmiControl.PeSmiState, PESMIHSMI, PESMIHSMI) == PESMIHSMI)  // try to set the NMI
+	if(InterlockedCompareExchange32(&PeSmiControl.PeSmiState, PESMIHSMI, PESMIHSMI) ==
+							PESMIHSMI)  // try to set the NMI
 	{
 		// if we know that the SMI handler is already active, then don't continue
 		// save the state, process the SMI, then start the VM/PE afterwards
@@ -206,11 +213,11 @@ void LaunchPeVm(UINT32 PeType, UINT32 CpuIndex)
 		mGuestContextCommonSmm[PeType].GuestContextPerCpu[0].Register.Rcx,
 		mGuestContextCommonSmm[PeType].GuestContextPerCpu[0].Register.Rdx));
 
-	//SetMinSwTimerInt();
 	PeVmData[PeType].UserModule.RunCount++;
 	// set the runcount into the STM shared page
 
-	*((UINT64 *)(PeVmData[PeType].SharedPageStm + sizeof(UINT64))) = PeVmData[PeType].UserModule.RunCount;
+	*((UINT64 *)(PeVmData[PeType].SharedPageStm + sizeof(UINT64))) =
+			PeVmData[PeType].UserModule.RunCount;
 
 	DEBUG((EFI_D_INFO,
 		"%ld LaunchPeVM - Initiating PE/VM run number: %d\n",
@@ -223,23 +230,27 @@ void LaunchPeVm(UINT32 PeType, UINT32 CpuIndex)
 		*((UINT64 *)(PeVmData[PeType].SharedPageStm)),
 		*((UINT64 *)(PeVmData[PeType].SharedPageStm + sizeof(UINT64)))));
 
-	mHostContextCommon.HostContextPerCpu[CpuIndex].GuestVmType = PeType;  // Make sure we take the correct path upon RSM
+	// Make sure we take the correct path upon RSM
+	mHostContextCommon.HostContextPerCpu[CpuIndex].GuestVmType = PeType;
 
 	StartPeTimeStamp = AsmReadTsc(); // set start time
 
 	AsmWbinvd ();
 
 	DEBUG((EFI_D_INFO,
-		"%ld LaunchPeVm - ***Debug*** VmPE ready for launch PeType %d registers-address: 0x%016llx\n", 
+		"%ld LaunchPeVm - ***Debug*** VmPE ready for launch PeType %d registers-address: 0x%016llx\n",
 		CpuIndex,
 		PeType,
 		&mGuestContextCommonSmm[PeType].GuestContextPerCpu[0].Register ));
+
 	// need to check to see if an SMI happend during this period
 	// first incidcate that the VM/PE is ready for launch
 
-	VmPeReady = 1;   // this will cause the interrupt handler to save the VM/PE and launch the VM/PE once the SMI is handled
+	// this will cause the interrupt handler to save the VM/PE and
+	// launch the VM/PE once the SMI is handled
+	VmPeReady = 1;
 
-	if(InterlockedCompareExchange32(&PeSmiControl.PeSmiState, PESMINULL, PESMIPNMI) == PESMIHSMI) //old PESMIPNMI, PESMIPNMI
+	if(InterlockedCompareExchange32(&PeSmiControl.PeSmiState, PESMIPNMI, PESMIHSMI) == PESMIHSMI)
 	{
 		// if we are here, then an SMI has come in and the system is processing it
 		// we need to get out and let the system process the SMI and then restart
@@ -259,7 +270,9 @@ void LaunchPeVm(UINT32 PeType, UINT32 CpuIndex)
 			CpuIndex));
 	}
 
-	if(NMIReceived > 1)   // check to see if we received an NMI during the build proceess - if so, handle the SMI then launch
+	// check to see if we received an NMI during the build proceess -
+	// if so, handle the SMI then launch
+	if(NMIReceived > 1)
 	{
 		DEBUG((EFI_D_INFO,
 			"%ld LaunchPeVM - NMI detected during build - delaying launch to handle SMI\n",
@@ -283,8 +296,13 @@ void LaunchPeVm(UINT32 PeType, UINT32 CpuIndex)
 
 	Rflags = AsmVmLaunch (&mGuestContextCommonSmm[PeType].GuestContextPerCpu[0].Register);
 	DEBUG ((EFI_D_ERROR, "%ld LaunchPeVm - (STM):o(\n", (UINTN)CpuIndex));
-	DEBUG ((EFI_D_ERROR, "%ld LaunchPeVm - !!!LaunchGuestSmm fail for PeVm!!!\n", (UINTN)CpuIndex));
-	DEBUG ((EFI_D_ERROR, "%ld LaunchPeVm - Rflags: (UINTN)CpuIndex, %08llx\n", (UINTN)CpuIndex, Rflags));
+	DEBUG ((EFI_D_ERROR,
+		"%ld LaunchPeVm - !!!LaunchGuestSmm fail for PeVm!!!\n",
+		CpuIndex));
+	DEBUG ((EFI_D_ERROR,
+		"%ld LaunchPeVm - Rflags: (UINTN)CpuIndex, %08llx\n",
+		CpuIndex,
+		Rflags));
 	DEBUG ((EFI_D_ERROR, "%ld LaunchPeVm - VMCS_32_RO_VM_INSTRUCTION_ERROR: %08x\n",
 			(UINTN)CpuIndex,
 			(UINTN)VmRead32 (VMCS_32_RO_VM_INSTRUCTION_ERROR_INDEX)));
@@ -308,7 +326,8 @@ void LaunchPeVm(UINT32 PeType, UINT32 CpuIndex)
 		(UINTN) CpuIndex,
 		(UINTN)VmRead32 (VMCS_32_RO_VM_INSTRUCTION_ERROR_INDEX)));
 	DumpVmcsAllField (CpuIndex);
-	DumpRegContext (&mGuestContextCommonSmm[PeType].GuestContextPerCpu[0].Register, CpuIndex);
+	DumpRegContext (&mGuestContextCommonSmm[PeType].GuestContextPerCpu[0].Register,
+			CpuIndex);
 	ReleaseSpinLock (&mHostContextCommon.DebugLock);
 }
 
@@ -363,7 +382,10 @@ STM_STATUS RunPermVM(UINT32 CpuIndex)
 
 	// setup the return
 
-	rc =  SetupProtExecVm(CpuIndex, PeVmData[PE_PERM].UserModule.VmConfig, RESTART_VM, PeType); // can only restart PERM_VM
+	rc =  SetupProtExecVm(CpuIndex,
+				PeVmData[PE_PERM].UserModule.VmConfig,
+				RESTART_VM,
+				PeType); // can only restart PERM_VM
 
 	if(rc != PE_SUCCESS)   // did we have a problem
 	{
@@ -422,7 +444,7 @@ UINT32  PostPeVmProc(UINT32 rc, UINT32 CpuIndex, UINT32 mode)
 		TotalPeTime,
 		TotalScaleTime));
 
-	switch (rc)    // dump guest state upon bad return (eventually place in shared area)
+	switch (rc)
 	{
 	case PE_VM_ATTEMPTED_VMCALL:
 	case PE_VMLAUNCH_ERROR:
@@ -438,10 +460,12 @@ UINT32  PostPeVmProc(UINT32 rc, UINT32 CpuIndex, UINT32 mode)
 	case PE_VM_EXCEPTION:
 		DumpVmcsAllField(CpuIndex);   //  temp debug
 		DumpVmxCapabillityMsr(CpuIndex);
-		DumpRegContext(&mGuestContextCommonSmm[PeType].GuestContextPerCpu[0].Register, CpuIndex);
+		DumpRegContext(&mGuestContextCommonSmm[PeType].GuestContextPerCpu[0].Register,
+			CpuIndex);
 		print_region_list(PeType, CpuIndex);
 
-		if((PERM_VM_CRASH_BREAKDOWN & PeVmData[PeType].UserModule.VmConfig) == PERM_VM_CRASH_BREAKDOWN)
+		if((PERM_VM_CRASH_BREAKDOWN & PeVmData[PeType].UserModule.VmConfig) ==
+				PERM_VM_CRASH_BREAKDOWN)
 		{
 			// user wants perm vm released after crash
 			mode = RELEASE_VM;
@@ -471,18 +495,20 @@ UINT32  PostPeVmProc(UINT32 rc, UINT32 CpuIndex, UINT32 mode)
 
 	if(mode == PRESERVE_VM)
 	{
-		if((PERM_VM_RUN_ONCE & PeVmData[PeType].UserModule.VmConfig) == PERM_VM_RUN_ONCE)
+		if((PERM_VM_RUN_ONCE & PeVmData[PeType].UserModule.VmConfig) ==
+			PERM_VM_RUN_ONCE)
 		{
 			// user wants perm vm released after crash
 			mode = RELEASE_VM;
 			DEBUG((EFI_D_INFO,
 				"%ld PostPeVmProc - Perm VM configured to run only once\n",
 				CpuIndex));
-			PeSmiControl.PeCpuIndex = -1;                               // indicate none functioning at this momemnet 
+			PeSmiControl.PeCpuIndex = -1; // indicate none functioning at this momemnet 
 		}
 		else
 		{
-			if((PERM_VM_RUN_PERIODIC & PeVmData[PeType].UserModule.VmConfig) == PERM_VM_RUN_PERIODIC)
+			if((PERM_VM_RUN_PERIODIC & PeVmData[PeType].UserModule.VmConfig) ==
+				PERM_VM_RUN_PERIODIC)
 			{
 				// the PE/VM is running in periodic mode
 				DEBUG((EFI_D_INFO,
@@ -531,7 +557,8 @@ UINT32  PostPeVmProc(UINT32 rc, UINT32 CpuIndex, UINT32 mode)
 		if (mGuestContextCommonSmi.GuestContextPerCpu[CpuIndex].Launched) {
 			Rflags = AsmVmResume (&mGuestContextCommonSmi.GuestContextPerCpu[CpuIndex].Register);
 			// BUGBUG: - AsmVmLaunch if AsmVmResume fail
-			if (VmRead32 (VMCS_32_RO_VM_INSTRUCTION_ERROR_INDEX) == VmxFailErrorVmResumeWithNonLaunchedVmcs) {
+			if (VmRead32 (VMCS_32_RO_VM_INSTRUCTION_ERROR_INDEX) ==
+				VmxFailErrorVmResumeWithNonLaunchedVmcs) {
 				//      DEBUG ((EFI_D_ERROR, "(STM):-(\n", (UINTN)Index));
 				Rflags = AsmVmLaunch (&mGuestContextCommonSmi.GuestContextPerCpu[CpuIndex].Register);
 			}
@@ -563,7 +590,6 @@ UINT32  PostPeVmProc(UINT32 rc, UINT32 CpuIndex, UINT32 mode)
 				VmRead32 (VMCS_32_RO_VMEXIT_INSTRUCTION_LENGTH_INDEX));
 		}
 	}
-	//DEBUG((EFI_D_INFO, "%ld PostPeVmProc - guest return address is %p\n", CpuIndex, VmReadN(VMCS_N_GUEST_RIP_INDEX)));
 	// clear out the page table list
 	if(mode == RELEASE_VM)
 	{
@@ -600,23 +626,24 @@ UINT32  PostPeVmProc(UINT32 rc, UINT32 CpuIndex, UINT32 mode)
 		WriteUnaligned32 ((UINT32 *)&Reg->Rax, rc);
 		if (rc == PE_SUCCESS) 
 		{
-			VmWriteN (VMCS_N_GUEST_RFLAGS_INDEX, VmReadN(VMCS_N_GUEST_RFLAGS_INDEX) & ~RFLAGS_CF);
+			VmWriteN (VMCS_N_GUEST_RFLAGS_INDEX,
+				VmReadN(VMCS_N_GUEST_RFLAGS_INDEX) & ~RFLAGS_CF);
 		} 
 		else 
 		{
 			DEBUG((EFI_D_INFO,
 				"%ld PostPeVmProc - Unsucessful return noted in RFLAGS_CF\n",
 				CpuIndex));
-			VmWriteN (VMCS_N_GUEST_RFLAGS_INDEX, VmReadN(VMCS_N_GUEST_RFLAGS_INDEX) | RFLAGS_CF);
+			VmWriteN (VMCS_N_GUEST_RFLAGS_INDEX,
+				VmReadN(VMCS_N_GUEST_RFLAGS_INDEX) | RFLAGS_CF);
 		}
 	}
 
 	mHostContextCommon.HostContextPerCpu[CpuIndex].GuestVmType = SMI_HANDLER;
 	DEBUG((EFI_D_INFO,
-		"%ld PostPeVmProc - sucessfully completed - RC: 0x%x\n",
+		 "%ld PostPeVmProc - sucessfully completed - RC: 0x%x\n",
 		CpuIndex,
 		rc));
-	//StopSwTimer();
 	CheckPendingMtf (CpuIndex);
 
 	//
@@ -624,12 +651,19 @@ UINT32  PostPeVmProc(UINT32 rc, UINT32 CpuIndex, UINT32 mode)
 	//
 	Rflags = AsmVmResume (&mGuestContextCommonSmi.GuestContextPerCpu[CpuIndex].Register);
 	// BUGBUG: - AsmVmLaunch if AsmVmResume fail
-	if (VmRead32 (VMCS_32_RO_VM_INSTRUCTION_ERROR_INDEX) == VmxFailErrorVmResumeWithNonLaunchedVmcs) {
-		DEBUG ((EFI_D_ERROR, "%ld PostPeVmProc - Rflags: %08x\n", CpuIndex, Rflags));
-		DEBUG ((EFI_D_ERROR, "%ld PostPeVmProc - VMCS_32_RO_VM_INSTRUCTION_ERROR: %08x\n",
-				CpuIndex,
-				(UINTN)VmRead32 (VMCS_32_RO_VM_INSTRUCTION_ERROR_INDEX)));
-		DEBUG ((EFI_D_ERROR, "%ld PostPeVmProc - (STM):o(\n", (UINTN)CpuIndex));
+	if (VmRead32 (VMCS_32_RO_VM_INSTRUCTION_ERROR_INDEX) ==
+			VmxFailErrorVmResumeWithNonLaunchedVmcs) {
+		DEBUG ((EFI_D_ERROR,
+			"%ld PostPeVmProc - Rflags: %08x\n",
+			CpuIndex,
+			Rflags));
+		DEBUG ((EFI_D_ERROR,
+			"%ld PostPeVmProc - VMCS_32_RO_VM_INSTRUCTION_ERROR: %08x\n",
+			CpuIndex,
+			(UINTN)VmRead32 (VMCS_32_RO_VM_INSTRUCTION_ERROR_INDEX)));
+		DEBUG ((EFI_D_ERROR,
+			"%ld PostPeVmProc - (STM):o(\n",
+			(UINTN)CpuIndex));
 		Rflags = AsmVmLaunch (&mGuestContextCommonSmi.GuestContextPerCpu[CpuIndex].Register);
 	}
 
@@ -642,12 +676,14 @@ UINT32  PostPeVmProc(UINT32 rc, UINT32 CpuIndex, UINT32 mode)
 		(UINTN)VmRead32 (VMCS_32_RO_VM_INSTRUCTION_ERROR_INDEX)));
 
 	DumpVmcsAllField (CpuIndex);
-	DumpRegContext (&mGuestContextCommonSmi.GuestContextPerCpu[CpuIndex].Register, CpuIndex);
+	DumpRegContext (&mGuestContextCommonSmi.GuestContextPerCpu[CpuIndex].Register,
+			CpuIndex);
 	ReleaseSpinLock (&mHostContextCommon.DebugLock);
 	DEBUG((EFI_D_ERROR, "%ld PostPeVmProc - CpuDeadLoop\n"));
 	CpuDeadLoop ();  // crash here because we cannot get back to the MLE...
 
-	// check to see if there is a path through the intel code for going back to the MLE
+	// check to see if there is a path through the intel code
+	// for going back to the MLE
 
 	return rc;    // always succeed
 }
@@ -686,9 +722,12 @@ UINT32 save_Inter_PeVm(UINT32 CpuIndex)
 	// come here when the VM has been interrupted by an SMI
 	// setup for the call to PostPeVmProc
 
-	UINT32 PeType = mHostContextCommon.HostContextPerCpu[CpuIndex].GuestVmType;    // which PT are we using
+	// which PT are we using
+	UINT32 PeType = mHostContextCommon.HostContextPerCpu[CpuIndex].GuestVmType;
+
 	// let the STM know that we are waiting to come back
-	mHostContextCommon.HostContextPerCpu[CpuIndex].NonSmiHandler = PeType;   
+	mHostContextCommon.HostContextPerCpu[CpuIndex].NonSmiHandler = PeType;
+
 	EndTimeStamp = AsmReadTsc();
 	
 	DEBUG((EFI_D_INFO,
@@ -711,12 +750,18 @@ UINT32 RestoreInterPeVm(UINT32 CpuIndex, UINT32 PeType)
 	{
 		// should only happen when the PEV/VM is initially loaded, otherwise
 		// this informaition should be normally grabbed upon a smi timer interrupt
-		// bug - need to consider the case of debug loading of a module for testing
+		// bug -
+		//  need to consider the case of debug loading of a module for testing
 
 		if(GetMultiProcessorState(CpuIndex) == -1)
 		{
-			GetMPState = 1; // Indicate that we still need to get the processor state
-			return 1;         // in this case there is an SMI in process and we need to let it be processed.
+			// Indicate that we still need to get the processor state
+			GetMPState = 1;
+
+			// in this case there is an SMI in process and
+			// we need to let it be processed.
+
+			return 1;
 		}
 		else
 		{
@@ -725,7 +770,8 @@ UINT32 RestoreInterPeVm(UINT32 CpuIndex, UINT32 PeType)
 		}
 	}
 
-	if(InterlockedCompareExchange32(&PeSmiControl.PeSmiState, PESMIHSMI, PESMIHSMI) == PESMIHSMI)
+	if(InterlockedCompareExchange32(&PeSmiControl.PeSmiState,
+					PESMIHSMI, PESMIHSMI) == PESMIHSMI)
 	{
 		DEBUG((EFI_D_INFO,
 			"%ld RestoreInterPeVm - SMI in progress - aborting PE/VM restart\n",
@@ -735,16 +781,24 @@ UINT32 RestoreInterPeVm(UINT32 CpuIndex, UINT32 PeType)
 
 	// need to think about locking here in case there are two smi's in a row...
 	PeVmData[PeType].PeVmState = PE_VM_ACTIVE;
-	PeSmiControl.PeNmiBreak = 1;    // when 1, a NMI has been sent to break the thread in PE_APIC_id
-	PeSmiControl.PeApicId   = ReadLocalApicId ();    // APIC id of the thread that is executing the PE V<
+
+	// when 1, a NMI has been sent to break the thread in PE_APIC_id
+	PeSmiControl.PeNmiBreak = 1;
+
+	// APIC id of the thread that is executing the PE V<
+	PeSmiControl.PeApicId   = ReadLocalApicId ();
+
 	PeSmiControl.PeCpuIndex   = CpuIndex;
-	//PeSmiControl.PeExec = 0;         // when 1 PE_APIC_ID is executing a 
+	
 	// think about break code (BUG)
 
-	VmPeReady = 0;             // set the ready gate (for here do not get out (BUG - Review this!!! for SMI in this interval)
+	// set the ready gate (for here do not get out
+	// (BUG - Review this!!! for SMI in this interval)
+	VmPeReady = 0;
 	enable_nmi();              // turn on NMI
 
-	PeSmiControl.PeNmiBreak = 0;    // when 1, a NMI has been sent to break the thread in PE_APIC_id
+	// when 1, a NMI has been sent to break the thread in PE_APIC_id
+	PeSmiControl.PeNmiBreak = 0;
 	PeSmiControl.PeExec = 1;         // when 1 PE_APIC_ID is executing a 
 	// setup the return
 
@@ -758,7 +812,8 @@ UINT32 RestoreInterPeVm(UINT32 CpuIndex, UINT32 PeType)
 	//
 	Rflags = AsmVmResume (&mGuestContextCommonSmm[PeType].GuestContextPerCpu[0].Register);
 	// BUGBUG: - AsmVmLaunch if AsmVmResume fail
-	if (VmRead32 (VMCS_32_RO_VM_INSTRUCTION_ERROR_INDEX) == VmxFailErrorVmResumeWithNonLaunchedVmcs) {
+	if (VmRead32 (VMCS_32_RO_VM_INSTRUCTION_ERROR_INDEX) ==
+		VmxFailErrorVmResumeWithNonLaunchedVmcs) {
 		//    DEBUG ((EFI_D_ERROR, "(STM):o(\n", (UINTN)Index));
 		Rflags = AsmVmLaunch (&mGuestContextCommonSmm[PeType].GuestContextPerCpu[0].Register);
 	}
@@ -827,21 +882,24 @@ VOID
 	)
 {
 	NMIReceived = NMIReceived + 1;   // increment
-	DEBUG((EFI_D_INFO,
-		"***NMI***Happened****\n"));
+	//DEBUG((EFI_D_INFO, "***NMI***Happened****\n"));
 
 	if(VmPeReady == 1)
 	{
 
 		UINT32 CpuIndex = ApicToIndex (ReadLocalApicId ());
-		// in this instance, the VmPe is ready for launch, but an SMI has appeared after the NMI has
-		// been enabled, but during the iteval between VM/PE setup complete and its launch
-		// so we will hold the launch, service the SMI and then launch the VM/PE once the
+		// in this instance, the VmPe is ready for launch,
+		// but an SMI has appeared after the NMI has
+		// been enabled, but during the iterval between
+		// VM/PE setup complete and its launch
+		// so we will hold the launch, service the SMI and
+		// then launch the VM/PE once the
 		// SMI is handled
 
 		save_Inter_PeVm(CpuIndex);
 		DEBUG((EFI_D_INFO,
-			"%ld enable_nmi - Return from non-returnable function\n", CpuIndex));
+			"%ld enable_nmi - Return from non-returnable function\n",
+			CpuIndex));
 
 		// this function should not return... 
 	}
