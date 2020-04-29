@@ -250,7 +250,7 @@ void LaunchPeVm(UINT32 PeType, UINT32 CpuIndex)
 	// launch the VM/PE once the SMI is handled
 	VmPeReady = 1;
 
-	if(InterlockedCompareExchange32(&PeSmiControl.PeSmiState, PESMIPNMI, PESMIHSMI) == PESMIHSMI)
+	if(InterlockedCompareExchange32(&PeSmiControl.PeSmiState, PESMIPNMI, PESMIHSMI) ==			PESMIHSMI)
 	{
 		// if we are here, then an SMI has come in and the system is processing it
 		// we need to get out and let the system process the SMI and then restart
@@ -671,9 +671,14 @@ UINT32  PostPeVmProc(UINT32 rc, UINT32 CpuIndex, UINT32 mode)
 	}
 
 	AcquireSpinLock (&mHostContextCommon.DebugLock);
-	DEBUG ((EFI_D_ERROR, "%ld PostPeVmProc - !!!PePostVmProcessing FAIL!!!\n", CpuIndex));
-	DEBUG ((EFI_D_ERROR, "%ld PostPeVmProc - Rflags: %08x\n", CpuIndex, Rflags));
-	DEBUG ((EFI_D_ERROR, 
+	DEBUG ((EFI_D_ERROR,
+		"%ld PostPeVmProc - !!!PePostVmProcessing FAIL!!!\n",
+		CpuIndex));
+	DEBUG ((EFI_D_ERROR,
+		"%ld PostPeVmProc - Rflags: %08x\n",
+		CpuIndex,
+		Rflags));
+	DEBUG ((EFI_D_ERROR,
 		"%ld PostPeVmProc - VMCS_32_RO_VM_INSTRUCTION_ERROR: %08x\n",
 		CpuIndex,
 		(UINTN)VmRead32 (VMCS_32_RO_VM_INSTRUCTION_ERROR_INDEX)));
