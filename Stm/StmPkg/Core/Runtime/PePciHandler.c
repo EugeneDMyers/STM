@@ -202,6 +202,17 @@ void StopSwTimer(void)
 	IoWrite32(pmbase + SMI_EN, smi_en);
 }
 
+/*
+ *  CheckTimerSTS
+ *   Input:
+ *     Index - cpu number
+ *
+ *   Output:
+ *     0 - No timer interrupt detected
+ *     1 - Timer interrupt detected
+ *     2 - Timer interrupt plus additional SMI
+ */
+
 int CheckTimerSTS(UINT32 Index)
 {
 	UINT16 pmbase = get_pmbase();
@@ -211,11 +222,25 @@ int CheckTimerSTS(UINT32 Index)
 #endif
 	if((smi_sts & PERIODIC_STS) == PERIODIC_STS)
 	{
-		DEBUG((EFI_D_INFO,
-			"%ld CheckTimerSTS - Timer Interrupt Detected\n",
-			Index,
-			smi_sts));
-		return 1;
+		UINT32 smi_en = IoRead32(pmbase + SMI_EN);
+		UINT32 other_smi = (smi_en & smi_sts) & ~PERIODIC_STS;
+
+		if(other_smi == 0)
+		{ 
+			DEBUG((EFI_D_INFO,
+				"%ld CheckTimerSTS - Timer Interrupt Detected\n",
+				Index,
+				smi_sts));
+			return 1;
+		}
+		else
+		{
+			DEBUG((EFI_D_INFO,
+				"%ld CheckTimerSTS - Timer + other SMI found\n",
+				Index,
+				smi_sts));
+			return 2;
+		}
 	}
 	else
 	{
