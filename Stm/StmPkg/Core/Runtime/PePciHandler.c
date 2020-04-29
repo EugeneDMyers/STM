@@ -120,11 +120,13 @@ UINT16 get_pmbase(void)
 				(STM_RSC *)mGuestContextCommonSmm[SMI_HANDLER].BiosHwResourceRequirementsPtr,
 				IO_RANGE);
 		if(Resource == NULL)
-			DEBUG((EFI_D_ERROR, "get_pmbase - Error pmbase not found in resource list\n"));
+			DEBUG((EFI_D_ERROR,
+				"get_pmbase - Error pmbase not found in resource list\n"));
 		else
 		{
 			pmbase = Resource->Io.Base;
-			DEBUG((EFI_D_INFO, "get_pmbase - pmbase set at 0x%x\n", pmbase));
+			DEBUG((EFI_D_INFO,
+				"get_pmbase - pmbase set at 0x%x\n", pmbase));
 		}
 	}
 	return pmbase;
@@ -137,11 +139,12 @@ void StartTimer(void)
 	UINT32 smi_sts = IoRead32(pmbase + SMI_STS);
 
 	smi_en |= PERIODIC_EN;
-
+#if 0
 	DEBUG((EFI_D_INFO,
 		"StartTimer - smi_en: 0x%08lx smi_sts: 0x%08lx\n",
 		smi_en,
 		smi_sts));
+#endif
 	IoWrite32(pmbase + SMI_STS, PERIODIC_STS);
 	IoWrite32(pmbase + SMI_EN, smi_en);
 }
@@ -152,10 +155,19 @@ void SetEndOfSmi(void)
 	UINT16 pmbase = get_pmbase();
 	UINT32 smi_en = IoRead32(pmbase + SMI_EN);
 	smi_en |= EOS_EN;  // set the bit
-
+#if 0
+	DEBUG((EFI_D_INFO,
+		"-- SetEndOfSmi pmbase: %x smi_en: %x \n",
+		pmbase,
+		smi_en));
+#endif
 	IoWrite32(pmbase + SMI_EN, smi_en);
-	//DEBUG((EFI_D_INFO, "SetEndOfSmi smi_en: 0x%08lx smi_sts: 0x%08lx\n", IoRead32(pmbase + SMI_EN), IoRead32(pmbase + SMI_STS)));
-
+#if 0
+	DEBUG((EFI_D_INFO,
+		"SetEndOfSmi smi_en: 0x%08lx smi_sts: 0x%08lx\n",
+		IoRead32(pmbase + SMI_EN),
+		IoRead32(pmbase + SMI_STS)));
+#endif
 }
 
 void PrintSmiEnRegister(UINT32 Index)
@@ -173,11 +185,12 @@ void AckTimer(void)
 	UINT16 pmbase = get_pmbase();
 	
 	IoWrite32(pmbase + SMI_STS, PERIODIC_STS);
-	
+#if 0
 	DEBUG((EFI_D_INFO,
 		"AckTimer - smi_en: 0x%08lx smi_sts: 0x%08lx\n",
 		IoRead32(pmbase + SMI_EN),
 		IoRead32(pmbase + SMI_STS)));
+#endif
 }
 
 void StopSwTimer(void)
@@ -193,9 +206,9 @@ int CheckTimerSTS(UINT32 Index)
 {
 	UINT16 pmbase = get_pmbase();
 	UINT32 smi_sts = IoRead32(pmbase + SMI_STS);
-
-	//DEBUG((EFI_D_DEBUG, "%ld CheckTimerSTS - 0x%08lx\n", Index, smi_sts));
-
+#if 0
+	DEBUG((EFI_D_ERROR, "%ld CheckTimerSTS - 0x%08lx\n", Index, smi_sts));
+#endif
 	if((smi_sts & PERIODIC_STS) == PERIODIC_STS)
 	{
 		DEBUG((EFI_D_INFO,
@@ -206,6 +219,12 @@ int CheckTimerSTS(UINT32 Index)
 	}
 	else
 	{
+#if 0
+		DEBUG((EFI_D_INFO,
+			"%ld CheckTimerSTS - No Timer Interrupt Detected\n",
+			Index,
+			smi_sts));
+#endif
 		return 0;
 	}
 }
@@ -213,8 +232,9 @@ int CheckTimerSTS(UINT32 Index)
 void ClearTimerSTS()
 {
 	UINT16 pmbase = get_pmbase();
-
-	IoWrite32(pmbase + SMI_STS, PERIODIC_STS);  // just want to clear the  status - do not touch the rest
+	
+	// just want to clear the  status - do not touch the rest
+	IoWrite32(pmbase + SMI_STS, PERIODIC_STS);
 }
 
 void SetMaxSwTimerInt()
