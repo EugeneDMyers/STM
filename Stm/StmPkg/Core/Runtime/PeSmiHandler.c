@@ -114,37 +114,6 @@ UINT32 PeSmiHandler(UINT32 CpuIndex)
 
 					//sizeof(*NumProcessors) + sizeof(*NumProcessors));
 					RootState = (ROOT_VMX_STATE *) ((char *)NumProcessors + 64);
-
-					// get the local processor state
-
-					GetRootVmxState(CpuIndex, &RootState[CpuIndex]);
-
-					// we set to one to indicate we are not there
-					InterlockedCompareExchange32(&retvalue, 0, 1);
-
-					// the VM/PE Cpu cleans up and runs
-					InterlockedCompareExchange32(&PeSmiControl.PeWaitTimer, 1, 0);
-					StopSwTimer();
-					retvalue = 1;
-
-					// start the VM/PE
-					PeVmData[PeType].StartMode = PEVM_PRESTART_SMI; // starting from SMI
-					CpuReadySync(CpuIndex);   // sync everyone ud
-					SetEndOfSmi();    // make sure that the timer SMI has been cleared
-
-					for(CpuNum = 0; CpuNum < mHostContextCommon.CpuNum; CpuNum++)
-					{
-						PrintVmxState(CpuNum, &RootState[CpuNum]);
-					}
-
-					if( mHostContextCommon.StmShutdown == 1)
-					{
-						// time to quit
-						 StmTeardown(CpuIndex);
-					}
-
-					RunPermVM(CpuIndex);
-					return retvalue;
 				}
 			}
 		}
@@ -160,6 +129,30 @@ UINT32 PeSmiHandler(UINT32 CpuIndex)
 
 			GetRootVmxState(CpuIndex, &RootState[CpuIndex]);
 			retvalue = 1;
+                        CpuReadySync(CpuIndex);
+
+			if (PeSmiControl.PeCpuIndex == (INT32)CpuIndex)
+			{
+				InterlockedCompareExchange32(&PeSmiControl.PeWaitTimer, 1, 0);
+                                StopSwTimer();
+
+                                // start the VM/PE
+                                PeVmData[PeType].StartMode = PEVM_PRESTART_SMI; // starting from SMI
+                                SetEndOfSmi();    // make sure that the timer SMI has been cleared
+
+                                for(CpuNum = 0; CpuNum < mHostContextCommon.CpuNum; CpuNum++)
+                                {
+                                     PrintVmxState(CpuNum, &RootState[CpuNum]);
+                                }
+
+                                if( mHostContextCommon.StmShutdown == 1)
+                                {
+					// time to quit
+					StmTeardown(CpuIndex);
+                                }
+
+                                RunPermVM(CpuIndex);
+			}
 
 			// we do  not reset the state here as the VM/PE will be processing
 			// when it competes it should end with a PeSmiState pf PESMIPNMI (waiting for NMI)
