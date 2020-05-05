@@ -41,6 +41,7 @@ UINT32 PeSmiHandler(UINT32 CpuIndex)
 	UINT64 * NumProcessors;
 	UINT32 PeType = PE_PERM;
 	UINT32 CpuNum;
+	UINT32 TimerSTS = 0;
 
 	InterlockedCompareExchange32(&PeSmiControl.PeSmiState, PESMINULL, PESMIHSMI);
 		//DEBUG((EFI_D_INFO, "%ld PeSmiHandler - CurrPeSmiState %ld\n", CpuIndex, PeSmiControl.PeSmiState));
@@ -100,7 +101,21 @@ UINT32 PeSmiHandler(UINT32 CpuIndex)
 
 			if(InterlockedCompareExchange32(&PeSmiControl.PeWaitTimer, 1, 1) == 1)
 			{
-				if(CheckTimerSTS(CpuIndex) != 0)
+				TimerSTS = CheckTimerSTS(CpuIndex);
+
+				if (TimerSTS == 2)
+				{
+					// we have an additional SMI
+					InterlockedCompareExchange32 (&retvalue, 1, 0);
+
+				}
+				else
+				{
+
+					InterlockedCompareExchange32 (&retvalue, 0, 1);
+				}
+
+				if(TimerSTS != 0)
 				{
 #if 0
 					DEBUG((EFI_D_INFO,
@@ -128,7 +143,6 @@ UINT32 PeSmiHandler(UINT32 CpuIndex)
 			RootState = (ROOT_VMX_STATE *) ((char *)NumProcessors + 64);
 
 			GetRootVmxState(CpuIndex, &RootState[CpuIndex]);
-			retvalue = 1;
                         CpuReadySync(CpuIndex);
 
 			if (PeSmiControl.PeCpuIndex == (INT32)CpuIndex)
@@ -140,7 +154,9 @@ UINT32 PeSmiHandler(UINT32 CpuIndex)
                                 PeVmData[PeType].StartMode = PEVM_PRESTART_SMI; // starting from SMI
                                 SetEndOfSmi();    // make sure that the timer SMI has been cleared
 
-                                for(CpuNum = 0; CpuNum < mHostContextCommon.CpuNum; CpuNum++)
+				InterlockedCompareExchange32(&PeSmiControl.PeSmiState, PESMIHTMR, PESMINULL);
+
+				for(CpuNum = 0; CpuNum < mHostContextCommon.CpuNum; CpuNum++)
                                 {
                                      PrintVmxState(CpuNum, &RootState[CpuNum]);
                                 }
@@ -150,6 +166,13 @@ UINT32 PeSmiHandler(UINT32 CpuIndex)
 					// time to quit
 					StmTeardown(CpuIndex);
                                 }
+
+				if(TimerSTS == 2)
+				{
+					// SMI has happened at the same time, so process it
+					PeVmData[PeType].PeVmState = PE_VM_WAIT_START;
+					return 0;
+				}
 
                                 RunPermVM(CpuIndex);
 			}

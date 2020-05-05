@@ -345,7 +345,8 @@ STM_STATUS RunPermVM(UINT32 CpuIndex)
 		"%ld RunPermVM entered\n",
 		CpuIndex));
 
-	if(PeVmData[PeType].PeVmState != PE_VM_IDLE )
+	if((PeVmData[PeType].PeVmState != PE_VM_IDLE) &&
+	   (PeVmData[PeType].PeVmState != PE_VM_WAIT_START))
 	{
 		DEBUG((EFI_D_ERROR,
 			"%ld RunPermVM - Can not run a Perm PE/VM\n",

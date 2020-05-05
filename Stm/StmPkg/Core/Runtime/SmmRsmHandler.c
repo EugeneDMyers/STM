@@ -94,6 +94,12 @@ VOID
 					PeType));
 				break;
 			}
+		case PE_VM_WAIT_START:
+			{
+				RunPermVM(Index);
+				DEBUG ((EFI_D_ERROR, "%ld RsmHandler - Unable to start Perm PE VM", Index));
+				break;
+			}
 		case PE_VM_IDLE:
 		case PE_VM_AVAIL:
 			{
