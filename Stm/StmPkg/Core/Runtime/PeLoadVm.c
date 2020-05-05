@@ -250,7 +250,7 @@ void LaunchPeVm(UINT32 PeType, UINT32 CpuIndex)
 	// launch the VM/PE once the SMI is handled
 	VmPeReady = 1;
 
-	if(InterlockedCompareExchange32(&PeSmiControl.PeSmiState, PESMIPNMI, PESMIHSMI) ==			PESMIHSMI)
+	if(InterlockedCompareExchange32(&PeSmiControl.PeSmiState, PESMIPNMI, PESMIHSMI) == PESMIHSMI)
 	{
 		// if we are here, then an SMI has come in and the system is processing it
 		// we need to get out and let the system process the SMI and then restart
