@@ -164,7 +164,8 @@ void LaunchPeVm(UINT32 PeType, UINT32 CpuIndex)
 		CpuIndex,
 		PeSmiControl.PeSmiState));
 
-	if(InterlockedCompareExchange32(&PeSmiControl.PeSmiState, PESMIHSMI, PESMIHSMI) ==			PESMIHSMI)  // try to set the NMI
+	if(InterlockedCompareExchange32(&PeSmiControl.PeSmiState, PESMIHSMI, PESMIHSMI) ==
+									PESMIHSMI)  // try to set the NMI
 	{
 		// if we know that the SMI handler is already active, then don't continue
 		// save the state, process the SMI, then start the VM/PE afterwards
@@ -244,10 +245,11 @@ void LaunchPeVm(UINT32 PeType, UINT32 CpuIndex)
 	// need to check to see if an SMI happend during this period
 	// first incidcate that the VM/PE is ready for launch
 
-	// this will cause the interrupt handler to save the VM/PE and				  // launch the VM/PE once the SMI is handled
+	// this will cause the interrupt handler to save the VM/PE and
+	// launch the VM/PE once the SMI is handled
 	VmPeReady = 1;
 
-	if(InterlockedCompareExchange32(&PeSmiControl.PeSmiState, PESMIPNMI, PESMIHSMI) ==			PESMIHSMI)
+	if(InterlockedCompareExchange32(&PeSmiControl.PeSmiState, PESMIPNMI, PESMIHSMI) == PESMIHSMI)
 	{
 		// if we are here, then an SMI has come in and the system is processing it
 		// we need to get out and let the system process the SMI and then restart
@@ -331,7 +333,8 @@ STM_STATUS RunPermVM(UINT32 CpuIndex)
 
 	DEBUG((EFI_D_INFO, "%ld RunPermVM entered\n", CpuIndex));
 
-	if(PeVmData[PeType].PeVmState != PE_VM_IDLE )
+	if((PeVmData[PeType].PeVmState != PE_VM_IDLE) &&
+	   (PeVmData[PeType].PeVmState != PE_VM_WAIT_START))
 	{
 		DEBUG((EFI_D_ERROR,
 			"%ld RunPermVM - Can not run a Perm PE/VM\n",
