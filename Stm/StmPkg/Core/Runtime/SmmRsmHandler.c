@@ -69,8 +69,10 @@ VOID
 	if(PeSmiControl.PeCpuIndex == ((INT32) Index))
 	{
 		PeType = mHostContextCommon.HostContextPerCpu[Index].NonSmiHandler;
-		//PeType = mHostContextCommon.HostContextPerCpu[Index].GuestVmType;
-		DEBUG((EFI_D_ERROR, "%ld RsmHandler - VmPe Detected - PeType: %ld PeVmState: %ld\n", Index, PeType, PeVmData[PeType].PeVmState));
+		DEBUG((EFI_D_INFO, "%ld RsmHandler - VmPe Detected - PeType: %ld PeVmState: %ld\n",
+				Index,
+				PeType,
+				PeVmData[PeType].PeVmState));
 
 		switch(PeVmData[PeType].PeVmState)
 		{
@@ -81,11 +83,21 @@ VOID
 				RestoreInterPeVm(Index, PeType);
 				//should not return... will let the module handle the error processing
 
-				// this will return in the case where the VM/PE was being created and it was interrupted by a SMI that was detected
+				// this will return in the case where the VM/PE was being created and
+				// it was interrupted by a SMI that was detected
 				// while doing the processor state gathering.
 				// we will come out and let it return so that the SMI can get fired and
 				// when the SMI handler is done will reattempt to regather the processor info
-				DEBUG((EFI_D_ERROR, "%ld RsmHandler ERROR - Failed to restart PE/VM after SMI, PeType: %ld\n", Index, PeType));
+				DEBUG((EFI_D_ERROR,
+					"%ld RsmHandler ERROR - Failed to restart PE/VM after SMI, PeType: %ld\n",
+					Index,
+					PeType));
+				break;
+			}
+		case PE_VM_WAIT_START:
+			{
+				RunPermVM(Index);
+				DEBUG ((EFI_D_ERROR, "%ld RsmHandler - Unable to start Perm PE VM", Index));
 				break;
 			}
 		case PE_VM_IDLE:
@@ -96,7 +108,9 @@ VOID
 			}
 		default:
 			{
-				DEBUG((EFI_D_ERROR, " %ld RsmHandler - data structure inconsistency - suspended PE/VM not found\n", Index));
+				DEBUG((EFI_D_ERROR,
+					"%ld RsmHandler - data structure inconsistency - suspended PE/VM not found\n",
+					Index));
 			}
 		}
 	}

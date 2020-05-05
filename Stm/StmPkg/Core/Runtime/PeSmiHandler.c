@@ -41,27 +41,29 @@ UINT32 PeSmiHandler(UINT32 CpuIndex)
 	UINT64 * NumProcessors;
 	UINT32 PeType = PE_PERM;
 	UINT32 CpuNum;
+	UINT32 TimerSTS = 0;
 
 	InterlockedCompareExchange32(&PeSmiControl.PeSmiState, PESMINULL, PESMIHSMI);
-		//DEBUG((EFI_D_DEBUG, "%ld PeSmiHandler - CurrPeSmiState %ld\n", CpuIndex, PeSmiControl.PeSmiState));
+	//DEBUG((EFI_D_INFO, "%ld PeSmiHandler - CurrPeSmiState %ld\n", CpuIndex, PeSmiControl.PeSmiState));
 
 	if(PeSmiControl.PeCpuIndex == (INT32)CpuIndex )  // when the pe/vm comes in...
 	{
-		// The VM/PE comes in here and causes the state to be set to null
-		//DEBUG((EFI_D_DEBUG, "%ld PeSmiHandler - VM/PE responded to SMI, CurrPeSmiState %ld\n", CpuIndex, PeSmiControl.PeSmiState));
+#if 0
+		DEBUG((EFI_D_INFO,
+			"%ld PeSmiHandler - VM/PE responded to SMI, CurrPeSmiState %ld\n",
+				CpuIndex,
+				PeSmiControl.PeSmiState));
+#endif
 		InterlockedCompareExchange32(&PeSmiControl.PeSmiState, PESMIPNMI2, PESMINULL);
 	}
 
 	if(InterlockedCompareExchange32(&PeSmiControl.PeSmiState, PESMIPNMI, PESMIPNMI2) == PESMIPNMI)
-		///PESMIPNMI == PeSmiControl.PeSmiState)
 	{
 		// eventually the VM/PE will be started (or at least built) and this will cause one of the processors
 		// to send a NMI to the VM/PE processor causing it to drop out and process the SMI
 		// when it does, all processors will exit this loop and process the SMI as usual
 
 		SignalPeVm(CpuIndex);  // make sure that the PE/VM processes this SMI as well
-		//PeSmiControl.PeSmiState = PESMINULL;
-
 	}
 
 	CpuReadySync(CpuIndex);     // everyone waits until processor 0 figures out what to do
@@ -73,17 +75,19 @@ UINT32 PeSmiHandler(UINT32 CpuIndex)
 		// VM/PE sends a SMI to the other processors when it wants state information from other CPU's
 
 		NumProcessors = (UINT64 *) PeVmData[PeType].SharedPageStm;
-		RootState = (ROOT_VMX_STATE *) ((char *)NumProcessors + 64);//sizeof(*NumProcessors) + sizeof(*NumProcessors));
+
+		//sizeof(*NumProcessors) + sizeof(*NumProcessors));
+		RootState = (ROOT_VMX_STATE *) ((char *)NumProcessors + 64);
 
 		// get the local processor state
 
 		GetRootVmxState(CpuIndex, &RootState[CpuIndex]);
 
-		//retvalue = 1;    // we did something
 		CpuReadySync(CpuIndex);   // wait for everyone to finish
 		if(CpuIndex == 0)
 		{
-			InterlockedCompareExchange32(&PeSmiControl.PeSmiState, PESMIPSMI, PESMINULL);   // reset the state
+			// Reset the state
+			InterlockedCompareExchange32(&PeSmiControl.PeSmiState, PESMIPSMI, PESMINULL);
 		}
 		return 1;    // tell the SmiEventHandler that there is one less processor 
 
@@ -97,48 +101,34 @@ UINT32 PeSmiHandler(UINT32 CpuIndex)
 
 			if(InterlockedCompareExchange32(&PeSmiControl.PeWaitTimer, 1, 1) == 1)
 			{
-				if(CheckTimerSTS(CpuIndex) != 0)
-				{
-					//DEBUG((EFI_D_DEBUG, "%ld CheckAndGetState - (PESMIHSMI) Processing VM/PE startup PeSmiState: %d\n", CpuIndex, PeSmiControl.PeSmiState));
+				TimerSTS = CheckTimerSTS(CpuIndex);
 
+				if (TimerSTS == 2)
+				{
+					// we have an additional SMI
+					InterlockedCompareExchange32 (&retvalue, 1, 0);
+
+				}
+				else
+				{
+
+					InterlockedCompareExchange32 (&retvalue, 0, 1);
+				}
+
+				if(TimerSTS != 0)
+				{
+#if 0
+					DEBUG((EFI_D_INFO,
+						"%ld CheckAndGetState - (PESMIHSMI) Processing VM/PE startup PeSmiState: %d\n",
+						CpuIndex,
+						PeSmiControl.PeSmiState));
+#endif
 					InterlockedCompareExchange32(&PeSmiControl.PeSmiState, PESMIHSMI, PESMIHTMR);
 
 					NumProcessors = (UINT64 *) PeVmData[PeType].SharedPageStm;
-					RootState = (ROOT_VMX_STATE *) ((char *)NumProcessors + 64);//sizeof(*NumProcessors) + sizeof(*NumProcessors));
 
-					// get the local processor state
-
-					GetRootVmxState(CpuIndex, &RootState[CpuIndex]);
-
-					InterlockedCompareExchange32(&retvalue, 0, 1);  // we set to one to indicate we are not there
-
-					// the VM/PE Cpu cleans up and runs
-					//PeSmiControl.PeWaitTimer = 0;
-					InterlockedCompareExchange32(&PeSmiControl.PeWaitTimer, 1, 0);
-					//ClearSwTimerSTS();
-					StopSwTimer();
-					retvalue = 1;
-					// start the VM/PE
-					PeVmData[PeType].StartMode = PEVM_PRESTART_SMI; // starting from SMI
-					CpuReadySync(CpuIndex);   // sync everyone ud
-					SetEndOfSmi();    // make sure that the timer SMI has been cleared
-
-					for(CpuNum = 0; CpuNum < mHostContextCommon.CpuNum; CpuNum++)
-					{
-						PrintVmxState(CpuNum, &RootState[CpuNum]);
-					}
-
-					if( mHostContextCommon.StmShutdown == 1)
-					{
-						// time to quit
-						 StmTeardown(CpuIndex);
-					}
-
-					RunPermVM(CpuIndex);
-					//PeVmData[PeType].StartMode = PEVM_START_SMI; // for consistency in error conditions
-					//CpuDeadLoop ();
-					//  should not get here...
-					return retvalue;    // tell the SmiEventHandler that there is one less processor
+					//sizeof(*NumProcessors) + sizeof(*NumProcessors));
+					RootState = (ROOT_VMX_STATE *) ((char *)NumProcessors + 64);
 				}
 			}
 		}
@@ -151,7 +141,39 @@ UINT32 PeSmiHandler(UINT32 CpuIndex)
 			RootState = (ROOT_VMX_STATE *) ((char *)NumProcessors + 64);
 
 			GetRootVmxState(CpuIndex, &RootState[CpuIndex]);
-			retvalue = 1;
+                        CpuReadySync(CpuIndex);
+
+			if (PeSmiControl.PeCpuIndex == (INT32)CpuIndex)
+			{
+				InterlockedCompareExchange32(&PeSmiControl.PeWaitTimer, 1, 0);
+                                StopSwTimer();
+
+                                // start the VM/PE
+                                PeVmData[PeType].StartMode = PEVM_PRESTART_SMI; // starting from SMI
+                                SetEndOfSmi();    // make sure that the timer SMI has been cleared
+
+				InterlockedCompareExchange32(&PeSmiControl.PeSmiState, PESMIHTMR, PESMINULL);
+
+				for(CpuNum = 0; CpuNum < mHostContextCommon.CpuNum; CpuNum++)
+                                {
+                                     PrintVmxState(CpuNum, &RootState[CpuNum]);
+                                }
+
+                                if( mHostContextCommon.StmShutdown == 1)
+                                {
+					// time to quit
+					StmTeardown(CpuIndex);
+                                }
+
+				if(TimerSTS == 2)
+				{
+					// SMI has happened at the same time, so process it
+					PeVmData[PeType].PeVmState = PE_VM_WAIT_START;
+					return 0;
+				}
+
+                                RunPermVM(CpuIndex);
+			}
 
 			// we do  not reset the state here as the VM/PE will be processing
 			// when it competes it should end with a PeSmiState pf PESMIPNMI (waiting for NMI)
@@ -160,8 +182,8 @@ UINT32 PeSmiHandler(UINT32 CpuIndex)
 		{
 			if(CpuIndex == 0)
 			{
-				//PeSmiControl.PeSmiState = PESMINULL;
-				InterlockedCompareExchange32(&PeSmiControl.PeSmiState, PESMIHSMI, PESMINULL); // one of these will work	
+				// One of these will work
+				InterlockedCompareExchange32(&PeSmiControl.PeSmiState, PESMIHSMI, PESMINULL);
 			}
 			retvalue = 0;
 		}
