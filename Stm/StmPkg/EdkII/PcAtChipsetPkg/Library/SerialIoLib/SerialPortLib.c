@@ -142,16 +142,28 @@ SerialPortWrite (
   Result = NumberOfBytes;
 
   while (NumberOfBytes--) {
+    SerialPortWriteSingle(*Buffer++);
+  }
+
+  return Result;
+}
+
+UINTN
+EFIAPI
+SerialPortWriteSingle(
+	IN UINT8 Buffer
+)
+{
+ UINT8 Data;
+
     //
     // Wait for the serail port to be ready.
     //
     do {
       Data = IoRead8 ((UINT16) gUartBase + LSR_OFFSET);
     } while ((Data & LSR_TXRDY) == 0);
-    IoWrite8 ((UINT16) gUartBase, *Buffer++);
-  }
-
-  return Result;
+    IoWrite8 ((UINT16) gUartBase, Buffer);
+  return 0;
 }
 
 

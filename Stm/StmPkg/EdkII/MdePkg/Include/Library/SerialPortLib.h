@@ -56,6 +56,12 @@ SerialPortWrite (
   IN UINTN     NumberOfBytes
   );
 
+UINTN
+EFIAPI
+SerialPortWriteSingle(
+  IN UINT8 Buffer
+  );
+
 
 /**
   Read data from serial device and save the datas in buffer.
@@ -73,6 +79,7 @@ SerialPortWrite (
   @retval >0               Actual number of bytes read from serial device.
 
 **/
+
 UINTN
 EFIAPI
 SerialPortRead (
