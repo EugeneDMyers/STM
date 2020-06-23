@@ -466,5 +466,32 @@ DebugClearMemoryEnabled (
   #define CR(Record, TYPE, Field, TestSignature)                                              \
     BASE_CR (Record, TYPE, Field)
 #endif
+
+/**
+  Write data from buffer to device interface.
+
+  Writes NumberOfBytes data bytes from Buffer to the device interface.
+  The number of bytes actually written to the serial device is returned.
+  If the return value is less than NumberOfBytes, then the write operation failed.
+
+  If Buffer is NULL, then ASSERT().
+
+  If NumberOfBytes is zero, then return 0.
+
+  @param  Buffer           Pointer to the data buffer to be written.
+  @param  NumberOfBytes    Number of bytes to written to the serial device.
+
+  @retval 0                NumberOfBytes is 0.
+  @retval >0               The number of bytes written to the serial device.
+                           If this value is less than NumberOfBytes, then the read operation failed.
+
+**/
+UINTN
+EFIAPI
+DebugPortWrite (
+  IN UINT8     *Buffer,
+  IN UINTN     NumberOfBytes
+);
+
     
 #endif
