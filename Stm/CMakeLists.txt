@@ -55,4 +55,6 @@ add_subdirectory(StmPkg/EdkII/PcAtChipsetPkg/Library/SerialIoLib)
 add_subdirectory(StmPkg/EdkII/MdePkg/Library/BasePcdLibNull)
 add_subdirectory(StmPkg/Core)
 add_subdirectory(StmPkg/Library/StmPlatformLibNull)
+add_subdirectory(StmPkg/Library/coreboot)
+
 

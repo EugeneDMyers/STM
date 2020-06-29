@@ -22,6 +22,9 @@
 #include <Library/SerialPortLib.h>
 #include <Library/SynchronizationLib.h>
 
+extern int init_cbcons(void);
+extern void coreboot_debug_putc(char c);
+
 //
 // Define the maximum debug and assert message length that this library supports 
 //
@@ -37,6 +40,7 @@
 SPIN_LOCK  mInternalDebugLock = SPIN_LOCK_RELEASED; // TBD: need call InitializeSpinLock
 
 static int serial_initialized = 0;
+static int cbmem_initialized = 0;
 
 /**
   Write data from buffer to device interface.
@@ -74,7 +78,11 @@ DebugPortWrite (
   Result = NumberOfBytes;
 
   while (NumberOfBytes--) {
+    char c;
     SerialPortWriteSingle(*Buffer++);
+    c = (char) Buffer[0];
+    coreboot_debug_putc(c);
+    Buffer++;
   }
 
   return Result;
@@ -116,6 +124,12 @@ DebugPrint (
   {
 	serial_initialized = 1;
 	SerialPortInitialize();
+  }
+
+  if(cbmem_initialized == 0)
+  {
+        init_cbcons();
+        cbmem_initialized = 1;
   }
 
   //
