@@ -27,7 +27,7 @@ if("${BUILD}" STREQUAL "release")
 	message("Building with debug messages")
 	endif()
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Xlinker -Map=stm.map -Os -falign-functions -ffreestanding -s -pie --entry _ModuleEntryPoint -u _ModuleEntryPoint -nostdlib -n -z common-page-size=0x40 -fno-asynchronous-unwind-tables  -fno-jump-tables -fPIC -fno-stack-protector -fno-stack-check -include PcdData.h -T ${PROJECT_SOURCE_DIR}/StmPkg/Core/Stm.lds")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Xlinker -Map=stm.map -Xlinker --noinhibit-exec -Os -falign-functions -ffreestanding -s -pie --entry _ModuleEntryPoint -u _ModuleEntryPoint -nostdlib -n -z common-page-size=0x40 -fno-asynchronous-unwind-tables  -fno-jump-tables -fPIC -fno-stack-protector -fno-stack-check -include PcdData.h -T ${PROJECT_SOURCE_DIR}/StmPkg/Core/Stm.lds")
 
 set(CMAKE_ASM_FLAGS "-include BaseAsm.h -fPIC")
 set(CMAKE_ASM_CREATE_SHARED_LIBRARY "gcc ${CFLAGS} -o *.o")
