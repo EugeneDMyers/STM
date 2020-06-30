@@ -79,7 +79,7 @@ DebugPortWrite (
 
   while (NumberOfBytes--) {
     char c;
-    SerialPortWriteSingle(*Buffer++);
+    SerialPortWriteSingle(*Buffer);
     c = (char) Buffer[0];
     coreboot_debug_putc(c);
     Buffer++;
