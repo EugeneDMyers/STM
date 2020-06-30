@@ -35,6 +35,13 @@ UINT32 EventInjection (UINT32 Index, VM_EXIT_INFO_INTERRUPTION IntInfo, UINT32 I
 
 unsigned int StmVmPeNmiExCount = 0;
 
+extern UINTN TranslateEPTGuestToHost (
+		IN UINT64 EptPointer,
+		IN UINTN Addr,
+		OUT EPT_ENTRY **EntryPtr OPTIONAL
+		);
+
+
 void PeExceptionHandler( IN UINT32 CpuIndex)
 {
 	VM_EXIT_INFO_INTERRUPTION IntInfo;
@@ -69,6 +76,31 @@ void PeExceptionHandler( IN UINT32 CpuIndex)
 
 	if(IntInfo.Bits.Valid == 1)
 	{
+		// grab the instruction address from the stack
+		//
+		
+		UINT64 StackPointer = (UINT64) VmReadN (VMCS_N_GUEST_RSP_INDEX); 
+		UINT64 AddressSpaceStart = PeVmData[VmType].UserModule.AddressSpaceStart;
+		UINT64 AddressSpaceEnd = AddressSpaceStart + PeVmData[VmType].UserModule.AddressSpaceSize;
+		UINT64 InstructionAddress;
+		UINT64 * PhysStackPointer;
+		
+		// make sure that the stack pointer is within the address space
+
+		if(StackPointer < AddressSpaceStart ||
+			StackPointer > AddressSpaceEnd)
+		{
+			// Stack pointer is out of bounds
+			DEBUG((EFI_D_ERROR, "%ld PeExceptionHandler - Warning - Stack Pointer out of bounds\n",
+						CpuIndex));
+			InstructionAddress = 0;
+		}
+		else
+		{
+			PhysStackPointer  = (UINT64 *) TranslateEPTGuestToHost (mGuestContextCommonSmm[VmType].EptPointer.Uint64, StackPointer, 0L);
+			InstructionAddress = *PhysStackPointer;
+			
+		}
 
 		switch(IntInfo.Bits.Vector)
 		{
@@ -96,7 +128,7 @@ void PeExceptionHandler( IN UINT32 CpuIndex)
 					"%ld PeExceptionHandler - PE/VM General Protection Fault @ 0x%04lx:0x%016llx Address: 0x%016llx Info: 0x%lx\n",
 					CpuIndex,
 					VmRead16 (VMCS_16_GUEST_CS_INDEX),               
-					VmReadN(VMCS_N_GUEST_RIP_INDEX),
+					InstructionAddress,
 					VmReadN(VMCS_N_RO_EXIT_QUALIFICATION_INDEX),
 					IntInfo.Uint32));
 
@@ -123,7 +155,7 @@ void PeExceptionHandler( IN UINT32 CpuIndex)
 					"%ld PeExceptionHandler - VM/PE Page Fault @ 0x%04lx:0x%016llx Address: 0x%016llx Info: 0x%lx\n",
 					CpuIndex,
 					VmRead16 (VMCS_16_GUEST_CS_INDEX),               
-					VmReadN(VMCS_N_GUEST_RIP_INDEX),
+					InstructionAddress,
 					address,
 					IntInfo.Uint32));
 				
@@ -286,7 +318,7 @@ endpf:
 					"%ld PeExceptionHandler - PE/VM Unhandled Exception @ 0x%04lx:0x%016llx Address: 0x%016llx Info: 0x%lx\n",
 					CpuIndex,
 					VmRead16 (VMCS_16_GUEST_CS_INDEX),               
-					VmReadN(VMCS_N_GUEST_RIP_INDEX),
+					InstructionAddress,
 					VmReadN(VMCS_N_RO_EXIT_QUALIFICATION_INDEX),
 					IntInfo.Uint32));
 
