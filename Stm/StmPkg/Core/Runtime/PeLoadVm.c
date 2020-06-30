@@ -91,7 +91,7 @@ typedef union
 	UINT64                 Uint64;
 } MSR_PLATFORM_INFO_DATA;
 
-PE_SMI_CONTROL PeSmiControl;
+extern PE_SMI_CONTROL PeSmiControl;
 PE_VM_DATA PeVmData[4];   // right now support a max of 3 PE VM (VM 0 is the SMI_HANDLER)
 static UINT64 StartPeTimeStamp = 0;
 UINT64 EndTimeStamp = 0;
