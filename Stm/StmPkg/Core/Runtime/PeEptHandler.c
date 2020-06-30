@@ -51,8 +51,6 @@ EptCreatePageTable (
 
 // Initialization...
 
-MRTT_INFO  mMtrrInfo;
-
 #define L4_BITMASK            0x0000FF8000000000
 #define L3_BITMASK            0x0000007FC0000000
 #define L2_BITMASK            0x000000003FE00000
