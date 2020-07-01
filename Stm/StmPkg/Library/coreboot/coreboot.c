@@ -126,6 +126,8 @@ find_cb_table(void)
     return cbh;
 }
 
+static UINT32 STM_cursor = 0;
+
 int init_cbcons(void)
 {
     struct cb_header *cbh = find_cb_table();
@@ -137,16 +139,16 @@ int init_cbcons(void)
 
     if (cbref) {
         cbcon = (void*)(UINT64)cbref->cbmem_addr;
-        //debug_banner();
-        //dprintf(1, "Found coreboot cbmem console @ %llx\n", cbref->cbmem_addr);
+
+	// set the cursor such that the STM console will not overwrite the
+	// coreboot console output
+	STM_cursor = cbcon->cursor & CBMC_CURSOR_MASK;
     }
 
     return 0;
 fail:
     return -1;
 }
-
-
 
 void coreboot_debug_putc(char c)
 {
@@ -163,7 +165,7 @@ void coreboot_debug_putc(char c)
 
     cbcon->body[cursor++] = c;
     if (cursor >= cbcon->size) {
-        cursor = 0;
+        cursor = STM_cursor;
         flags |= CBMC_OVERFLOW;
     }
     cbcon->cursor = flags | cursor;
