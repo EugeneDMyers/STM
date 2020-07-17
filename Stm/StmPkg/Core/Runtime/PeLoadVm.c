@@ -109,11 +109,11 @@ void LaunchPeVm(UINT32 PeType, UINT32 CpuIndex)
 	// so that the PE module will access to those addresses
 
 	mGuestContextCommonSmm[PeType].GuestContextPerCpu[0].Register.Rbx =
-		(UINTN)PeVmData[PeType].UserModule.SharedPage;
+		(UINT64)PeVmData[PeType].UserModule.SharedPage & 0xFFFFFFFF;
 	mGuestContextCommonSmm[PeType].GuestContextPerCpu[0].Register.Rcx =
-		(UINT64)PeVmData[PeType].UserModule.Segment;
+		(UINT64)PeVmData[PeType].UserModule.SharedPage >> 32;
 	mGuestContextCommonSmm[PeType].GuestContextPerCpu[0].Register.Rdx =
-		(UINTN) PeVmData[PeType].UserModule.SharedStmPage;
+		(UINT32) PeVmData[PeType].UserModule.SharedStmPage;
 
 	// check and make aure that the heap is cleared as requested
 
@@ -207,7 +207,7 @@ void LaunchPeVm(UINT32 PeType, UINT32 CpuIndex)
 		VmRead32(VMCS_32_CONTROL_PIN_BASED_VM_EXECUTION_INDEX)));
 
 	DEBUG((EFI_D_INFO,
-		"%ld LaunchPeVm- guest parameter regs:\n        RBX: %p (shared page)\n        RCX: %p (region list)\n        RDX: %p (shared STM)\n",
+		"%ld LaunchPeVm- guest parameter regs:\n        RBX: %p (shared page - low)\n        RCX: %p (shared page - high)\n        RDX: %p (shared STM)\n",
 		CpuIndex,
 		mGuestContextCommonSmm[PeType].GuestContextPerCpu[0].Register.Rbx,
 		mGuestContextCommonSmm[PeType].GuestContextPerCpu[0].Register.Rcx,
