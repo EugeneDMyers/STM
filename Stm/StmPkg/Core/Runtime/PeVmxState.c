@@ -60,11 +60,11 @@ int GetMultiProcessorState(UINT32 CpuIndex)
 	// = (ROOT_VMX_STATE *) (NumProcessors + sizeof(*NumProcessors));
 	ROOT_VMX_STATE * RootState;
 	UINT32 CpuNum;
-
+#if 0
 	DEBUG((EFI_D_INFO,
 		"%ld GetMultiProcessorState - Started\n",
 		CpuIndex));
-
+#endif
 	if(PeVmData[PeType].SharedPageStm == NULL)
 	{
 		DEBUG((EFI_D_ERROR,
@@ -115,11 +115,12 @@ int GetMultiProcessorState(UINT32 CpuIndex)
 	{
 		PrintVmxState(CpuNum, &RootState[CpuNum]);
 	}
-
+#if 0
 	DEBUG((EFI_D_INFO,
 		"%ld GetMultiProcessorState - Completed. PeSmiState: %ld\n",
 		CpuIndex,
 		PeSmiControl.PeSmiState));
+#endif
 	return 0;
 }
 
@@ -202,7 +203,6 @@ void GetRootVmxState(UINT32 CpuIndex, ROOT_VMX_STATE * RootState)
 	{
 		// in guest operation, so our VMCS of interest
 		// is in the executive-VMCS field
-
 		RootState->VmcsType = 3;
 		HostRootVMCS = RootState->ExecutiveVMCS;
 		RootState->VmxState = VMX_STATE_GUEST;
@@ -224,7 +224,7 @@ VmcsFlushStart:
 #if 0
 		DEBUG((EFI_D_INFO, "%ld - GetRootState: RootGuestRIPMemory: 0x%016llx, Location: 0x%016llx\n", 
 			CpuIndex,
-			RootGuestRIPMemory,
+			RootGuestRIP_M,
 			((UINTN)HostRootVMCS + (UINTN)VMCS_N_GUEST_RIP_OFFSET)));
 #endif
 		// first create a dummy VMCS
@@ -255,6 +255,11 @@ VmcsFlushStart:
 			(UINTN)VMCS_N_GUEST_RIP_OFFSET);  // try again
 		FlushCount++;
 	}
+
+	if(RootState->RootGuestRIP != RootGuestRIP_M)
+		DEBUG ((EFI_D_ERROR, "%ld - GetRootState: *ERROR* VMCS Flush failed FlushCount: %d\n",
+			CpuIndex,
+			FlushCount));
 
 	// in any case, reload this and free the dummies if necessary
 	AsmVmPtrLoad(&CurrentVMCSSave);
@@ -355,7 +360,6 @@ VmcsFlushStart:
 #endif
 
 	// need to save the root vmx host structures
-#ifdef ZERO
 	if(RootState->VmxState == VMX_STATE_ROOT)
 	{
 		// if root, these entries are meaningless, so clear them out
@@ -367,9 +371,29 @@ VmcsFlushStart:
 		RootState->RootHostRSP   = 0;
 		RootState->RootHostRIP   = 0;
 		RootState->RootHostEPT   = 0;
+
+		// move the memory/root VMCS elements into place 
+
+		RootState->RootGuestCR0 = *(UINT64 *)((UINTN)HostRootVMCS +
+                                (UINTN)VMCS_N_GUEST_CR0_OFFSET);
+		RootState->RootGuestCR3  = *(UINT64 *)((UINTN)HostRootVMCS +
+                                (UINTN)VMCS_N_GUEST_CR3_OFFSET);
+		RootState->RootGuestCR4  = *(UINT64 *)((UINTN)HostRootVMCS +
+                                (UINTN)VMCS_N_GUEST_CR4_OFFSET);
+		RootState->RootGuestGDTRBase = *(UINT64 *)((UINTN)HostRootVMCS +
+                                (UINTN)VMCS_N_GUEST_GDTR_BASE_OFFSET);
+		RootState->RootGuestGDTRLimit = (*(UINT64 *)((UINTN)HostRootVMCS +
+                        (UINTN)VMCS_32_GUEST_GDTR_LIMIT_OFFSET)) & 0x00000000FFFFFFFF;
+		RootState->RootGuestIDTRBase = *(UINT64 *)((UINTN)HostRootVMCS +
+                                (UINTN)VMCS_N_GUEST_IDTR_BASE_OFFSET);
+		RootState->RootGuestIDTRLimit = (*(UINT64 *)((UINTN)HostRootVMCS +
+				(UINTN)VMCS_32_GUEST_LDTR_LIMIT_OFFSET)) & 0x00000000FFFFFFFF;
+		RootState->RootGuestRSP  = *(UINT64 *)((UINTN)HostRootVMCS +
+                                (UINTN)VMCS_N_GUEST_RSP_OFFSET);
+		RootState->RootGuestRIP = *(UINT64 *)((UINTN)HostRootVMCS +
+                                (UINTN)VMCS_N_GUEST_RIP_OFFSET);
 	}
 	else
-#endif
 	{
 		RootState->RootHostCR0 = *(UINT64 *)((UINTN)HostRootVMCS +
 					(UINTN)VMCS_N_HOST_CR0_OFFSET);
