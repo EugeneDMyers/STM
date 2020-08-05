@@ -82,11 +82,11 @@ STM_STATUS
 
 	PhysAddressParameter = TranslateEPTGuestToHost(mGuestContextCommonSmm[VmType].EptPointer.Uint64, (UINTN)AddressParameter, 0L);
 	PhysAddressParameterEnd = TranslateEPTGuestToHost(mGuestContextCommonSmm[VmType].EptPointer.Uint64, (UINTN)AddressParameter + sizeof(STM_MAP_ADDRESS_RANGE_DESCRIPTOR), 0L);
-
+#if 0
 	DEBUG((EFI_D_INFO,
 		"%ld PeSmmVmcallMapAddressRangeHandler - STM_API_MAP_ADDRESS_RANGE started\n",
 		Index));
-
+#endif
 	if(((PhysAddressParameter == 0)||(PhysAddressParameterEnd == 0))||
 		((PhysAddressParameter & ~0xFFF) != (PhysAddressParameterEnd & ~0XFFF))) 
 	{

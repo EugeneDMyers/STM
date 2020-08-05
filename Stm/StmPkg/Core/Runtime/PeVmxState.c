@@ -540,7 +540,7 @@ void PrintVmxState(UINT32 CpuIndex, ROOT_VMX_STATE * RootState)
 			RootState->ExecutiveVMCS,
 			RootState->LinkVMCS,
 			RootState->RootContEPT));
-
+#if 0
 		DEBUG((EFI_D_INFO,
 			 "%ld PrintVmxState (%d) \n H_CR0 %llx\n H_CR3 %llx\n H_CR4 %llx\n H_GDTR %llx\n H_IDTR %llx\n H_RSP %llx\n H_RIP %llx\n H_EPT %llx\n", 
 			CpuIndex,
@@ -553,6 +553,7 @@ void PrintVmxState(UINT32 CpuIndex, ROOT_VMX_STATE * RootState)
 			RootState->RootHostRSP,
 			RootState->RootHostRIP,
 			RootState->RootHostEPT));
+#endif
 	}
 }
 
