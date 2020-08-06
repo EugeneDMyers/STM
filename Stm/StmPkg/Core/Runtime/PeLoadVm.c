@@ -238,7 +238,7 @@ void LaunchPeVm(UINT32 PeType, UINT32 CpuIndex)
 	AsmWbinvd ();
 
 	DEBUG((EFI_D_INFO,
-		"%ld LaunchPeVm - ***Debug*** VmPE ready for launch PeType %d registers-address: 0x%016llx\n",
+		"%ld LaunchPeVm - VmPE ready for launch PeType %d registers-address: 0x%016llx\n",
 		CpuIndex,
 		PeType,
 		&mGuestContextCommonSmm[PeType].GuestContextPerCpu[0].Register ));
@@ -501,10 +501,12 @@ UINT32  PostPeVmProc(UINT32 rc, UINT32 CpuIndex, UINT32 mode)
 		{
 			// user wants perm vm released after crash
 			mode = RELEASE_VM;
-			DEBUG((EFI_D_INFO,
+			DEBUG ((EFI_D_INFO,
 				"%ld PostPeVmProc - Perm VM configured to run only once\n",
 				CpuIndex));
-			PeSmiControl.PeCpuIndex = -1; // indicate none functioning at this momemnet 
+
+			 // indicate none functioning at this momemnet
+			PeSmiControl.PeCpuIndex = -1;
 		}
 		else
 		{
@@ -516,6 +518,7 @@ UINT32  PostPeVmProc(UINT32 rc, UINT32 CpuIndex, UINT32 mode)
 					"%ld PostPeVmProc - Perm VM being setup for Timer interrupt\n",
 					CpuIndex));
 				PeSmiControl.PeCpuIndex = CpuIndex;
+				//
 				PeSmiControl.PeWaitTimer = 1;
 				PeVmData[PeType].PeVmState = PE_VM_IDLE;
 
@@ -540,8 +543,10 @@ UINT32  PostPeVmProc(UINT32 rc, UINT32 CpuIndex, UINT32 mode)
 			CpuIndex,
 			PeType));
 
-		// we will fake a return to the MLE - that will cause the pending SMI to fire allowing
-		// the smiEvent handler to process is and release all the processor threads
+		// we will fake a return to the MLE -
+		// that will cause the pending SMI to fire allowing
+		// the smiEvent handler to process it and release all
+		// he processor threads
 		// to handle the SMI
 
 		AsmVmPtrLoad(&mGuestContextCommonSmi.GuestContextPerCpu[CpuIndex].Vmcs);
@@ -601,9 +606,6 @@ UINT32  PostPeVmProc(UINT32 rc, UINT32 CpuIndex, UINT32 mode)
 		// so that in production someone cannot take advantange of this case
 		PeVmData[PeType].PeVmState = PE_VM_AVAIL;  //  not there anymore
 		PeSmiControl.PeCpuIndex = -1;    // indicate none functioning at this momemnet 
-		//keep the old vmcs around - think about clearing...
-		//FreePages((UINTN *)mGuestContextCommonSmm[PeType].GuestContextPerCpu[0].Vmcs, 2);
-		//mGuestContextCommonSmm[PeType].GuestContextPerCpu[0].Vmcs = 0L; // not there any more
 		DEBUG((EFI_D_INFO,
 			"%ld PostPeVmProc - PE/VM Free (AVAIL) - PeType: %ld\n",
 			CpuIndex,
