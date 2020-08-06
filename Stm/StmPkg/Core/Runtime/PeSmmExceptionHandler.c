@@ -59,6 +59,7 @@ void PeExceptionHandler( IN UINT32 CpuIndex)
 		CpuIndex,
 		IntInfo.Uint32,
 		IntErr));
+#if 0
 	/*DEBUG*/DEBUG((EFI_D_INFO,
 			"%ld PeExceptionHandler - Exception Bitmap is: 0x%08lx\n",
 			CpuIndex,
@@ -73,7 +74,7 @@ void PeExceptionHandler( IN UINT32 CpuIndex)
 			CpuIndex,
 			(UINT64)VmReadN(VMCS_N_GUEST_IDTR_BASE_INDEX),
 			VmRead32(VMCS_32_GUEST_IDTR_LIMIT_INDEX)));
-
+#endif
 	if(IntInfo.Bits.Valid == 1)
 	{
 		// grab the instruction address from the stack
@@ -149,6 +150,11 @@ void PeExceptionHandler( IN UINT32 CpuIndex)
 				
 				UINTN IDTLocation = VmReadN(VMCS_N_GUEST_IDTR_BASE_INDEX);  // find the IDT
 
+				// for page faults the faulting instruction is the RIP
+				// unless the fault is fetch, in the insttuction is on the stack
+
+				if((IntErr & 0x00000010) != 0x00000010)
+					InstructionAddress = VmReadN (VMCS_N_GUEST_RIP_INDEX);  
 				address = VmReadN(VMCS_N_RO_EXIT_QUALIFICATION_INDEX);
 
 				DEBUG((EFI_D_INFO,
@@ -159,7 +165,9 @@ void PeExceptionHandler( IN UINT32 CpuIndex)
 					address,
 					IntInfo.Uint32));
 				
-				if(( address >= IDTLocation) && (address < (IDTLocation + SIZE_4KB)))
+				if(( address >= IDTLocation) &&
+					(address < (IDTLocation + SIZE_4KB)) && 
+					(IDTLocation != 0))
 				{
 					DEBUG((EFI_D_ERROR,
 						"%ld PeExceptionHandler - VM/PE Page Fault on IDT page - terminating VM\n",
@@ -210,22 +218,22 @@ void PeExceptionHandler( IN UINT32 CpuIndex)
 
 				if (sizeof(UINTN) == sizeof(UINT64)) 
 				{
-					UINTN                             PageTable;
-					UINTN                             Pml4Index;
-					UINTN							  PdpteIndex;
-					UINTN							  PdeIndex;
-					UINTN							  PteIndex;
-					UINTN                            *Pde;
-					UINTN                            *Pdpte;
-					UINTN                            *Pml4;
-					UINTN							 *Pte;
-					UINTN                             BaseAddress;
-					UINTN                             EndAddress;
-					UINTN                             PhysBase;
-					UINTN							  PdpteV;
-					UINTN						      PdeV;
-					UINTN							  PteV;
-					UINTN							  Offset;
+					UINTN PageTable;
+					UINTN Pml4Index;
+					UINTN PdpteIndex;
+					UINTN PdeIndex;
+					UINTN PteIndex;
+					UINTN *Pde;
+					UINTN *Pdpte;
+					UINTN *Pml4;
+					UINTN *Pte;
+					UINTN BaseAddress;
+					UINTN EndAddress;
+					UINTN PhysBase;
+					UINTN PdpteV;
+					UINTN PdeV;
+					UINTN PteV;
+					UINTN Offset;
 
 					PageTable = VmReadN (VMCS_N_GUEST_CR3_INDEX);
 					//Pml4 = (UINT64 *)PageTable;
