@@ -9,5 +9,6 @@ target_link_libraries(DebugLib PUBLIC
   PrintLib
   BaseLib
   SynchronizationLib
+  corebootLib
 )
 

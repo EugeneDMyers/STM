@@ -94,9 +94,9 @@ void PeIoHandler( IN UINT32 CpuIndex)
 			}
 
 			AcquireSpinLock (&mInternalDebugLock); 
-			SerialPortWrite ((UINT8 *)"(VM/PE) ", sizeof("(VM/PE) ") - 1);
-			SerialPortWrite ((UINT8 *) PhysAddress, DataSize);
-			SerialPortWrite ((UINT8 *)"\r", 1);
+			DebugPortWrite ((UINT8 *)"(VM/PE) ", sizeof("(VM/PE) ") - 1);
+			DebugPortWrite ((UINT8 *) PhysAddress, DataSize);
+			DebugPortWrite ((UINT8 *) "\r", 1);
 			ReleaseSpinLock (&mInternalDebugLock);
 		}
 	}

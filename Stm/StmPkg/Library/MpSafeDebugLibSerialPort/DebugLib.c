@@ -22,6 +22,9 @@
 #include <Library/SerialPortLib.h>
 #include <Library/SynchronizationLib.h>
 
+extern int init_cbcons(void);
+extern void coreboot_debug_putc(char c);
+
 //
 // Define the maximum debug and assert message length that this library supports 
 //
@@ -37,6 +40,54 @@
 SPIN_LOCK  mInternalDebugLock = SPIN_LOCK_RELEASED; // TBD: need call InitializeSpinLock
 
 static int serial_initialized = 0;
+static int cbmem_initialized = 0;
+
+/**
+  Write data from buffer to device interface.
+ 
+  Writes NumberOfBytes data bytes from Buffer to the device interface.
+  The number of bytes actually written to the serial device is returned.
+  If the return value is less than NumberOfBytes, then the write operation failed.
+
+  If Buffer is NULL, then ASSERT().
+
+  If NumberOfBytes is zero, then return 0.
+
+  @param  Buffer           Pointer to the data buffer to be written.
+  @param  NumberOfBytes    Number of bytes to written to the serial device.
+
+  @retval 0                NumberOfBytes is 0.
+  @retval >0               The number of bytes written to the serial device.
+                           If this value is less than NumberOfBytes, then the read operation failed.
+
+**/
+UINTN
+EFIAPI
+DebugPortWrite (
+  IN UINT8     *Buffer,
+  IN UINTN     NumberOfBytes
+)
+{
+  UINTN  Result;
+  UINT8  Data;
+
+  if (Buffer == NULL) {
+    return 0;
+  }
+
+  Result = NumberOfBytes;
+
+  while (NumberOfBytes--) {
+    char c;
+    SerialPortWriteSingle(*Buffer);
+    c = (char) Buffer[0];
+    coreboot_debug_putc(c);
+    Buffer++;
+  }
+
+  return Result;
+}
+
 
 /**
   Prints a debug message to the debug output device if the specified error level is enabled.
@@ -75,6 +126,12 @@ DebugPrint (
 	SerialPortInitialize();
   }
 
+  if(cbmem_initialized == 0)
+  {
+        init_cbcons();
+        cbmem_initialized = 1;
+  }
+
   //
   // Check driver debug mask value and global mask
   //
@@ -93,8 +150,8 @@ DebugPrint (
   // Send the print string to a Serial Port 
   //
   AcquireSpinLock (&mInternalDebugLock);
-  SerialPortWrite ((UINT8 *)"(STM) ", sizeof("(STM) ") - 1);
-  SerialPortWrite ((UINT8 *) Buffer, AsciiStrLen(Buffer));
+  DebugPortWrite ((UINT8 *)"(STM) ", sizeof("(STM) ") - 1);
+  DebugPortWrite ((UINT8 *) Buffer, AsciiStrLen(Buffer));
   ReleaseSpinLock (&mInternalDebugLock);
 }
 
@@ -145,8 +202,8 @@ DebugAssert (
   // Send the print string to the Console Output device
   //
   AcquireSpinLock (&mInternalDebugLock);
-  SerialPortWrite ((UINT8 *)"(STM) ", sizeof("(STM) ") - 1);
-  SerialPortWrite ((UINT8 *) Buffer, AsciiStrLen(Buffer));
+  DebugPortWrite ((UINT8 *)"(STM) ", sizeof("(STM) ") - 1);
+  DebugPortWrite ((UINT8 *) Buffer, AsciiStrLen(Buffer));
   ReleaseSpinLock (&mInternalDebugLock);
 
   //
