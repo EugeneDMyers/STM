@@ -1,6 +1,4 @@
 
-#define CONFIG_DEBUG_COREBOOT 1
-
 /****************************************************************
  * Memory map
  ****************************************************************/
@@ -152,7 +150,7 @@ fail:
 
 void coreboot_debug_putc(char c)
 {
-    if (!CONFIG_DEBUG_COREBOOT)
+#ifdef CONFIG_STM_CBMEM_CONSOLE
         return;
     if (!cbcon)
         return;
@@ -169,5 +167,6 @@ void coreboot_debug_putc(char c)
         flags |= CBMC_OVERFLOW;
     }
     cbcon->cursor = flags | cursor;
+#endif
 }
 

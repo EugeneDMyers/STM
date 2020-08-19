@@ -81,7 +81,8 @@ DebugPortWrite (
     char c;
     SerialPortWriteSingle(*Buffer);
     c = (char) Buffer[0];
-    coreboot_debug_putc(c);
+    if (cbmem_initialized)
+    	coreboot_debug_putc(c);
     Buffer++;
   }
 
@@ -125,13 +126,13 @@ DebugPrint (
 	serial_initialized = 1;
 	SerialPortInitialize();
   }
-
+#if CONFIG_STM_CBMEM_CONSOLE == 1
   if(cbmem_initialized == 0)
   {
-        init_cbcons();
-        cbmem_initialized = 1;
+       	init_cbcons();
+       	cbmem_initialized = 1;
   }
-
+#endif
   //
   // Check driver debug mask value and global mask
   //
