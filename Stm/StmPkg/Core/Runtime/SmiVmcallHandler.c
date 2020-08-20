@@ -948,11 +948,13 @@ STM_VMCALL_HANDLER_STRUCT  mSmiVmcallHandler[] = {
   {STM_API_MANAGE_VMCS_DATABASE,               SmiVmcallManageVmcsDatabaseHandler},
   {STM_API_INITIALIZE_PROTECTION,              SmiVmcallInitializeProtectionHandler},
   {STM_API_MANAGE_EVENT_LOG,                   SmiVmcallManageEventLogHandler},
+#ifdef CONFIG_STM_STMPE_ENABLE
   {STM_API_ADD_TEMP_PE_VM,		       SmiVmcallAddTempPeVmHandler},
   {STM_API_ADD_PERM_PE_VM,			SmiVmcallAddPermPeVmHandler},
   {STM_API_ADD_PERM_PE_VM_NORUN,		SmiVmcallAddPermPeVmNoRunHandler},
   {STM_API_RUN_PE_VM,				SmiVmcallRunPeVmHandler},
   {STM_API_END_ADD_PERM_PE_VM,                 SmiVmcallEndPermVmHandler}
+#endif
 };
 
 /**

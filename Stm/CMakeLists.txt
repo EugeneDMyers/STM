@@ -32,6 +32,11 @@ if("${CBMEM_ENABLE}")
 	message("Building with CBMEM console")
 	endif()
 
+if("${STMPE_ENABLED}")
+	add_definitions( -DCONFIG_STM_STMPE_ENABLE )
+	message("STM/PE Enabled")
+	endif()
+
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Xlinker -Map=stm.map -Xlinker --noinhibit-exec -Os -falign-functions -ffreestanding -s -pie --entry _ModuleEntryPoint -u _ModuleEntryPoint -nostdlib -n -z common-page-size=0x40 -fno-asynchronous-unwind-tables  -fno-jump-tables -fPIC -fno-stack-protector -fno-stack-check -include PcdData.h -T ${PROJECT_SOURCE_DIR}/StmPkg/Core/Stm.lds")
 
 set(CMAKE_ASM_FLAGS "-include BaseAsm.h -fPIC")
