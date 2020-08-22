@@ -151,7 +151,6 @@ fail:
 void coreboot_debug_putc(char c)
 {
 #ifdef CONFIG_STM_CBMEM_CONSOLE
-        return;
     if (!cbcon)
         return;
 

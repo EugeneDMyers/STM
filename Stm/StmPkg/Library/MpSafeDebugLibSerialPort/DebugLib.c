@@ -126,7 +126,7 @@ DebugPrint (
 	serial_initialized = 1;
 	SerialPortInitialize();
   }
-#if CONFIG_STM_CBMEM_CONSOLE == 1
+#ifdef CONFIG_STM_CBMEM_CONSOLE
   if(cbmem_initialized == 0)
   {
        	init_cbcons();
