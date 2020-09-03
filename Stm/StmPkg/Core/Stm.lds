@@ -117,7 +117,7 @@ SECTIONS
 
     	.text   : {
       	 *(.text.*)
-   	 }
+   	 } 
 	
     	. = ALIGN(0x20);
     	.rodata : {
