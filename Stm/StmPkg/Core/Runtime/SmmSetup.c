@@ -42,10 +42,10 @@ SmmSetup (
   Rflags = AsmVmPtrLoad (&mGuestContextCommonSmm[SMI_HANDLER].GuestContextPerCpu[Index].Vmcs);
   if ((Rflags & (RFLAGS_CF | RFLAGS_ZF)) != 0) {
     DEBUG ((EFI_D_ERROR,
-               "%ld ERROR: AsmVmPtrLoad - %016lx : %08x\n",
-               (UINTN)Index,
-               mGuestContextCommonSmm[SMI_HANDLER].GuestContextPerCpu[Index].Vmcs,
-               Rflags));
+		"%ld ERROR: AsmVmPtrLoad - %016lx : %08x\n",
+		(UINTN)Index,
+		mGuestContextCommonSmm[SMI_HANDLER].GuestContextPerCpu[Index].Vmcs,
+		Rflags));
     CpuDeadLoop ();
   }
 
@@ -67,7 +67,7 @@ SmmSetup (
 
     DEBUG ((EFI_D_INFO, "%ld SmmStmSetupRip start ...\n", (UINTN)Index));
     DEBUG ((EFI_D_INFO, "%ld New HostStack - %08x\n",
-                       (UINTN)Index, VmReadN  (VMCS_N_HOST_RSP_INDEX)));
+			(UINTN)Index, VmReadN  (VMCS_N_HOST_RSP_INDEX)));
     mHostContextCommon.HostContextPerCpu[Index].JumpBufferValid = TRUE;
     mGuestContextCommonSmm[SMI_HANDLER].GuestContextPerCpu[Index].Launched = TRUE;
     Rflags = AsmVmLaunch (&mGuestContextCommonSmm[SMI_HANDLER].GuestContextPerCpu[Index].Register);
@@ -76,8 +76,8 @@ SmmSetup (
     DEBUG ((EFI_D_ERROR, "%ld !!!SmmSetup FAIL!!!\n", (UINTN) Index));
     DEBUG ((EFI_D_ERROR, "%ld Rflags: %08x\n", (UINTN) Index, Rflags));
     DEBUG ((EFI_D_ERROR, "%ld VMCS_32_RO_VM_INSTRUCTION_ERROR: %08x\n",
-                       (UINTN) Index,
-                       (UINTN)VmRead32 (VMCS_32_RO_VM_INSTRUCTION_ERROR_INDEX)));
+			(UINTN) Index,
+			(UINTN)VmRead32 (VMCS_32_RO_VM_INSTRUCTION_ERROR_INDEX)));
     ReleaseSpinLock (&mHostContextCommon.DebugLock);
     CpuDeadLoop ();
   }
@@ -92,10 +92,7 @@ SmmSetup (
 
   Rflags = AsmVmPtrLoad (&mGuestContextCommonSmi.GuestContextPerCpu[Index].Vmcs);
   if ((Rflags & (RFLAGS_CF | RFLAGS_ZF)) != 0) {
-    DEBUG ((EFI_D_ERROR, "%ld ERROR: AsmVmPtrLoad - %016lx : %08x\n",
-			    (UINTN)Index,
-			    mGuestContextCommonSmi.GuestContextPerCpu[Index].Vmcs,
-			    Rflags));
+    DEBUG ((EFI_D_ERROR, "%ld ERROR: AsmVmPtrLoad - %016lx : %08x\n", (UINTN)Index, mGuestContextCommonSmi.GuestContextPerCpu[Index].Vmcs, Rflags));
     CpuDeadLoop ();
   }
 }
