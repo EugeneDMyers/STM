@@ -63,7 +63,8 @@ GoBsp:
   push %rcx
   movl $STM_API_INITIALIZE_PROTECTION, %eax
   push %rax
-  movq %rsp, %rcx # parameter
+  movq %rsp, %rcx # parameter for MSC
+  movq %rsp, %rdi # parameter for GCC
   subq $0x20, %rsp
   call ASM_PFX(InitializeSmmMonitor)
   addq $0x20, %rsp
@@ -110,7 +111,8 @@ GoAp:
   push %rcx
   movl $STM_API_START, %eax
   push %rax
-  movq %rsp, %rcx # parameter
+  movq %rsp, %rcx # parameter for MSC
+  movq %rsp, %rdi # parameter for GCC
   subq $0x20, %rsp
   call ASM_PFX(InitializeSmmMonitor)
   addq $0x20, %rsp
