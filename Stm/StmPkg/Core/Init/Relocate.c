@@ -216,18 +216,16 @@ extern UINT64 _ElfRelocTablesEnd,  _ElfRelocTablesStart;
 static int elf_process_reloc_table(UINT64 BaseLocation, UINT64 RelativeLocation ) {
 	int size;
 	int idx;
-	Elf64_Rela * reloc_table = (Elf64_Rela *) ((UINT64)&_ElfRelocTablesStart);  
 
 	// The following conditional is necessary because of differences in compler behaviors
 	// in handling the "&"
 	// Depending on the compiler and in some instances the version the "&" can be
 	// interpeted either as a LEA or as a relative address (where a base address has
 	// to be added)
+	// the following code works by assuming that the STM image is always less
+        // than 1MB in size and the MSEG boundry is at 1MB increments
 
-	if((((UINT64) reloc_table) & BaseLocation) == 0)
-	{
-		Elf64_Rela * reloc_table = (Elf64_Rela *) ((UINT64)&_ElfRelocTablesStart + (UINT64)BaseLocation);
-	}
+        Elf64_Rela * reloc_table = (Elf64_Rela *) ((UINT64)&_ElfRelocTablesStart | (UINT64)BaseLocation);
 
 	DEBUG((EFI_D_INFO, "ELF Relocation in progress Base %x Reloc tables %x\n", BaseLocation, &_ElfRelocTablesStart));
 
@@ -321,6 +319,7 @@ RelocateStmImage (
     // Not a valid PE image so Exit
     //
 	elf_process_reloc_table(StmImage, StmImage );
+	AsmWbinvd ();
     return ;
   }
 
