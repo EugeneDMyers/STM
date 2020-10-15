@@ -41,7 +41,11 @@ SmmSetup (
   AsmVmPtrStore (&mGuestContextCommonSmi.GuestContextPerCpu[Index].Vmcs);
   Rflags = AsmVmPtrLoad (&mGuestContextCommonSmm[SMI_HANDLER].GuestContextPerCpu[Index].Vmcs);
   if ((Rflags & (RFLAGS_CF | RFLAGS_ZF)) != 0) {
-    DEBUG ((EFI_D_ERROR, "%ld ERROR: AsmVmPtrLoad - %016lx : %08x\n", (UINTN)Index, mGuestContextCommonSmm[SMI_HANDLER].GuestContextPerCpu[Index].Vmcs, Rflags));
+    DEBUG ((EFI_D_ERROR,
+               "%ld ERROR: AsmVmPtrLoad - %016lx : %08x\n",
+               (UINTN)Index,
+               mGuestContextCommonSmm[SMI_HANDLER].GuestContextPerCpu[Index].Vmcs,
+               Rflags));
     CpuDeadLoop ();
   }
 
@@ -61,20 +65,23 @@ SmmSetup (
 
     STM_PERF_START (Index, 0, "BiosSmmHandler", "SmmSetup");
 
-    DEBUG ((EFI_D_INFO, "SmmStmSetupRip start (%d) ...\n", (UINTN)Index));
-    DEBUG ((EFI_D_INFO, "New HostStack (%d) - %08x\n", (UINTN)Index, VmReadN  (VMCS_N_HOST_RSP_INDEX)));
+    DEBUG ((EFI_D_INFO, "%ld SmmStmSetupRip start ...\n", (UINTN)Index));
+    DEBUG ((EFI_D_INFO, "%ld New HostStack - %08x\n",
+                       (UINTN)Index, VmReadN  (VMCS_N_HOST_RSP_INDEX)));
     mHostContextCommon.HostContextPerCpu[Index].JumpBufferValid = TRUE;
     mGuestContextCommonSmm[SMI_HANDLER].GuestContextPerCpu[Index].Launched = TRUE;
     Rflags = AsmVmLaunch (&mGuestContextCommonSmm[SMI_HANDLER].GuestContextPerCpu[Index].Register);
     mGuestContextCommonSmm[SMI_HANDLER].GuestContextPerCpu[Index].Launched = FALSE;
     AcquireSpinLock (&mHostContextCommon.DebugLock);
-    DEBUG ((EFI_D_ERROR, "!!!SmmSetup FAIL!!!\n"));
-    DEBUG ((EFI_D_ERROR, "Rflags: %08x\n", Rflags));
-    DEBUG ((EFI_D_ERROR, "VMCS_32_RO_VM_INSTRUCTION_ERROR: %08x\n", (UINTN)VmRead32 (VMCS_32_RO_VM_INSTRUCTION_ERROR_INDEX)));
+    DEBUG ((EFI_D_ERROR, "%ld !!!SmmSetup FAIL!!!\n", (UINTN) Index));
+    DEBUG ((EFI_D_ERROR, "%ld Rflags: %08x\n", (UINTN) Index, Rflags));
+    DEBUG ((EFI_D_ERROR, "%ld VMCS_32_RO_VM_INSTRUCTION_ERROR: %08x\n",
+                       (UINTN) Index,
+                       (UINTN)VmRead32 (VMCS_32_RO_VM_INSTRUCTION_ERROR_INDEX)));
     ReleaseSpinLock (&mHostContextCommon.DebugLock);
     CpuDeadLoop ();
   }
-  DEBUG ((EFI_D_INFO, "SmmStmSetupRip end (%d)\n", (UINTN)Index));
+  DEBUG ((EFI_D_INFO, "%ld SmmStmSetupRip end\n", (UINTN)Index));
 
   //
   // Restore HOST_RSP
@@ -85,7 +92,10 @@ SmmSetup (
 
   Rflags = AsmVmPtrLoad (&mGuestContextCommonSmi.GuestContextPerCpu[Index].Vmcs);
   if ((Rflags & (RFLAGS_CF | RFLAGS_ZF)) != 0) {
-    DEBUG ((EFI_D_ERROR, "ERROR: AsmVmPtrLoad(%d) - %016lx : %08x\n", (UINTN)Index, mGuestContextCommonSmi.GuestContextPerCpu[Index].Vmcs, Rflags));
+    DEBUG ((EFI_D_ERROR, "%ld ERROR: AsmVmPtrLoad - %016lx : %08x\n",
+			    (UINTN)Index,
+			    mGuestContextCommonSmi.GuestContextPerCpu[Index].Vmcs,
+			    Rflags));
     CpuDeadLoop ();
   }
 }

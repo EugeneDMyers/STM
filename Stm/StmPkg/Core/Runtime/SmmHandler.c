@@ -65,9 +65,6 @@ UnknownHandlerSmm (
 	UINT32 ExitReason;
   AcquireSpinLock (&mHostContextCommon.DebugLock);
 
-
-  //DEBUG ((EFI_D_ERROR, "%ld !!!UnknownHandlerSmm\n", (UINTN)Index));
-
   ExitReason = VmRead32 (VMCS_32_RO_EXIT_REASON_INDEX);
   DEBUG((EFI_D_ERROR, "%ld  UnknownHandlerSmm - VMExit Reason: 0x%08x\n", (UINTN) Index, ExitReason));
 
@@ -127,7 +124,7 @@ StmHandlerSmm (
   Register->Rsp = VmReadN (VMCS_N_GUEST_RSP_INDEX);
   CopyMem (Reg, Register, sizeof(X86_REGISTER));
 #if 0
-  DEBUG ((EFI_D_INFO, "%ld - !!!StmHandlerSmm X86_REG_Size %d\n", (UINTN)Index));
+  DEBUG ((EFI_D_INFO, "%ld - !!!StmHandlerSmm\n", (UINTN)Index));
 #endif
   //
   // Dispatch
@@ -142,9 +139,11 @@ StmHandlerSmm (
   //
   // Call dispatch handler
   //
-
-  //DEBUG ((EFI_D_ERROR, "%ld - StmHandlerSmm - calling handler reason: %d\n", (UINTN)Index, InfoBasic.Bits.Reason));
-
+#if 0
+  DEBUG ((EFI_D_ERROR, "%ld - StmHandlerSmm - calling handler reason: %d\n",
+			  (UINTN)Index,
+			  InfoBasic.Bits.Reason));
+#endif
   mStmHandlerSmm[InfoBasic.Bits.Reason] (Index);
 
   VmWriteN (VMCS_N_GUEST_RSP_INDEX, Reg->Rsp); // sync RSP
