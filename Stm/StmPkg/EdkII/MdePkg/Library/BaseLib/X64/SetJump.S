@@ -21,6 +21,7 @@
 
 ASM_GLOBAL ASM_PFX(SetJump)
 ASM_PFX(SetJump):
+    mov    %rdi, %rcx
     push   %rcx
     add    $0xffffffffffffffe0,%rsp
     call   ASM_PFX(InternalAssertJumpBuffer)

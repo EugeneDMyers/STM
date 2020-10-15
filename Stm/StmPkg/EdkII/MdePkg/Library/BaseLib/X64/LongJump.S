@@ -29,6 +29,8 @@
 #------------------------------------------------------------------------------
 ASM_GLOBAL ASM_PFX(InternalLongJump)
 ASM_PFX(InternalLongJump):
+    mov     %rdi, %rcx
+    mov     %rsi, %rdx
     mov     (%rcx), %rbx
     mov     0x8(%rcx), %rsp
     mov     0x10(%rcx), %rbp
