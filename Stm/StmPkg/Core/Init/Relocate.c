@@ -28,7 +28,6 @@ extern UINT64 GetMsegInfoFromMsr (
                     OUT UINT64  *MsegBase,
                     OUT UINT64  *MsegLength
                     );
-
 /**
 
   This function relocate image at ImageBase.
@@ -320,6 +319,7 @@ RelocateStmImage (
     //
 	elf_process_reloc_table(StmImage, StmImage );
 	AsmWbinvd ();
+
     return ;
   }
 
