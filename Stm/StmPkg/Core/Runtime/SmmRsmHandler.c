@@ -54,11 +54,10 @@ VOID
 	VmcsLinkPtr = VmRead64 (VMCS_64_GUEST_VMCS_LINK_PTR_INDEX);
   if (IsOverlap (VmcsLinkPtr, VmcsSize, mHostContextCommon.TsegBase, mHostContextCommon.TsegLength)) {
 			// Overlap TSEG
-                        DEBUG ((EFI_D_ERROR,
-                               "%ld RsmHandler - VmcsLinkPtr violation - %016lx\n",
-                               Index,
-                               VmcsLinkPtr));
-
+			DEBUG ((EFI_D_ERROR,
+				"%ld RsmHandler - VmcsLinkPtr violation - %016lx\n",
+				Index,
+				VmcsLinkPtr));
 			CpuDeadLoop() ;
 	}
 

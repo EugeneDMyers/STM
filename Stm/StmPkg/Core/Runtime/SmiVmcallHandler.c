@@ -42,7 +42,7 @@ SmiVmcallInitializeProtectionHandler (
 
 /**
 
-  This function is the STARt_API handler for SMI.
+  This function is the START_API handler for SMI.
 
   @param Index             CPU index
   @param AddressParameter  Addresss parameter
@@ -73,8 +73,8 @@ SmiVmcallStartHandler (
     if(Index == 0)
     {
 #if 0
-       // Dump the SMI handler EPT tables
-	//EptDumpPageTable (&mGuestContextCommonSmm[0].EptPointer);  // **DEBUG** Dump the SMI Handler EPT tables
+	// Dump the SMI handler EPT tables
+	EptDumpPageTable (&mGuestContextCommonSmm[0].EptPointer);
 #endif
 	// sync the BSP CPU once the API is ready
         CpuReadySync(Index);
@@ -91,10 +91,9 @@ SmiVmcallStartHandler (
 #endif
     return STM_SUCCESS;
   } else {
-   DEBUG ((EFI_D_ERROR,
-            "%ld SmiVmcallStartHandler - STM_API_START -- Error STM already started\n",
-             (UINTN) Index));
-
+	  DEBUG ((EFI_D_ERROR,
+	     "%ld SmiVmcallStartHandler - STM_API_START -- Error STM already started\n",
+	      (UINTN) Index));
     return ERROR_STM_ALREADY_STARTED;
   }
 }
