@@ -38,8 +38,8 @@ SECTIONS
 	.StmSpecVerMajor ALIGN(2048) : {BYTE(1)}
 	.StmSpecVerMinor   	     : {BYTE(0)}
 	.Reserved                    : {SHORT(0)}
-	/* page tables are at the end of the static section and the data section */
-	.StaticImageSize             : {LONG(_StmImageEnd)} 
+        /* page tables are after the Stm Image */
+        .StaticImageSize             : {LONG( ((_StmImageEnd + 0xFFF) & 0xFFFFF000) )} 
 	.PerProcDynamicMemorySize    : {LONG(SizeOfPerProcessorStack)}
 	.AdditionalDynamicMemorySize : {LONG(HeapSize + PageTableSize)}
 
@@ -111,7 +111,6 @@ SECTIONS
         .Attribute8        : {BYTE(0x93)}
         .LimitHi8          : {BYTE(0xCF)}
         .BaseHi8           : {BYTE(0)}      
-
 	
     	.fill3 : { FILL(0x0); . = ALIGN(0x1000);}
 
@@ -132,15 +131,15 @@ SECTIONS
 
 	. = ALIGN(0x20);
 
-	_ElfRelocTablesStart = .;
-    	.reloc : {
-	 *(.rela.*)
-    	}
-	_ElfRelocTablesEnd = .;
+        _ElfRelocTablesStart = .;
+        .reloc : {
+         *(.rela.*)
+        }
+        _ElfRelocTablesEnd = .;
 
 	_StmImageEnd = .;
 
-	 . = ALIGN(0X1000);
+        . = ALIGN(0X1000);
         .data : {
         *(.data.*)
         }
@@ -150,17 +149,23 @@ SECTIONS
       	*(.rdata.*)
     	}
     	. = ALIGN(0x20);
+
+        _BSS_start = .;
     	.bss : {
       	*(.bss.*)
       	*(COMMON)
+        *(.bss)
       	/* dummy */
       	/* LONG (0x12345678) */
     	}
+        _BSS_end = .;
 
     	. = ALIGN(0x20);
     	.edata : {
-    	}
-    	. = ALIGN(0x20);
+	}
+       . = ALIGN(0x20);
+
+        _StmImageEnd = .;
 
 	. = ALIGN(0x1000);
     	_StmPageTables = .;

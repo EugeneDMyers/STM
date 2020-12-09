@@ -668,11 +668,6 @@ BspInit (
  
   StmHeader = (STM_HEADER *)(UINTN)((UINT32)AsmReadMsr64(IA32_SMM_MONITOR_CTL_MSR_INDEX) & 0xFFFFF000);
 
-    // on a platform that does not start with TXT, cannot assume the data space has been set to zero
-  ZeroMem(&mHostContextCommon, sizeof(STM_HOST_CONTEXT_COMMON));
-  ZeroMem(&mGuestContextCommonSmi, sizeof(STM_HOST_CONTEXT_COMMON));
-  ZeroMem(&mGuestContextCommonSmm, sizeof(STM_HOST_CONTEXT_COMMON) * NUM_PE_TYPE);
-
   InitHeap (StmHeader);
   // after that we can use mHostContextCommon
  
@@ -1270,15 +1265,28 @@ LaunchBack (
 
 **/
 
+extern UINT64 _BSS_start, _BSS_end;
+
 VOID
 InitializeSmmMonitor (
   IN X86_REGISTER *Register
   )
 {
   UINT32  Index;
+  UINT64  MSEG;
+  UINT64  BSS_location;
+  UINT64  BSS_size;
 
   Index = GetIndexFromStack (Register);
   if (Index == 0) {
+   // Initialize the BSS before anyone has a chance to use it
+
+   MSEG = (UINT64) AsmReadMsr64(IA32_SMM_MONITOR_CTL_MSR_INDEX) & 0xFFFFF000;
+   BSS_location = (UINT64) &_BSS_start | (UINT64) MSEG;
+   BSS_size = (UINT64)&_BSS_end - (UINT64) &_BSS_start;
+   ZeroMem ((void *)BSS_location, BSS_size);
+   AsmWbinvd(); // flush caches
+
     // The build process should make sure "virtual address" is same as "file pointer to raw data",
     // in final PE/COFF image, so that we can let StmLoad load binrary to memory directly.
     // If no, GenStm tool will "load image". So here, we just need "relocate image"
