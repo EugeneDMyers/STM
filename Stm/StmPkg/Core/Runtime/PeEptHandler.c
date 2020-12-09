@@ -91,6 +91,7 @@ void PeEPTViolationHandler( IN UINT32 CpuIndex)
 	char * LinearAddressValid;
 	char * AddressViolation;
 	char Line[100];
+	UINT64 memory_location;
 
 	EndTimeStamp = AsmReadTsc();
 
@@ -100,9 +101,10 @@ void PeEPTViolationHandler( IN UINT32 CpuIndex)
 		CpuIndex,
 		VmexitQualification.UintN));
 
+	memory_location = VmRead64(VMCS_64_RO_GUEST_PHYSICAL_ADDR_INDEX);
 	DEBUG((EFI_D_ERROR, "%ld PeEPTViolationHandler - Protected Execution VM attempted to access protected MEMORY at 0x%016llx\n",
 		CpuIndex,
-		VmRead64(VMCS_64_RO_GUEST_PHYSICAL_ADDR_INDEX)));
+		memory_location));
 
 	// have to generate the error messages this way - DEBUG function does not like conditionals
 
@@ -199,6 +201,21 @@ void PeEPTViolationHandler( IN UINT32 CpuIndex)
 	}
 
 	UINT32 VmType = mHostContextCommon.HostContextPerCpu[CpuIndex].GuestVmType;
+
+	// check to see if PE/VM tried to execute out of its address space
+
+	if ((VmexitQualification.EptViolation.Xa == 1) &&
+	    (memory_location < PeVmData[VmType].UserModule.AddressSpaceStart) ||
+	    ((PeVmData[VmType].UserModule.AddressSpaceStart +
+		PeVmData[VmType].UserModule.AddressSpaceSize) < memory_location))
+	{
+		DEBUG ((EFI_D_ERROR,
+			"%ld PeEPTViolationHandler - VM/PE attempted execution outside its address space\n",
+			CpuIndex));
+	        PostPeVmProc(PE_VM_BAD_ACCESS , CpuIndex, RELEASE_VM);
+		return;
+	}
+
 	// Does the Perm PE/VM want a chance to request access
 	if ((VmType == PE_PERM) &&
 	   ((PERM_VM_INJECT_INT & PeVmData[VmType].UserModule.VmConfig) == PERM_VM_INJECT_INT))
