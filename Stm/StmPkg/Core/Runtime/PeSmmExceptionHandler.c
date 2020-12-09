@@ -173,6 +173,14 @@ void PeExceptionHandler( IN UINT32 CpuIndex)
 						"%ld PeExceptionHandler - VM/PE Page Fault on IDT page - terminating VM\n",
 						CpuIndex));
 				}
+				else if ((IDTLocation < PeVmData[VmType].UserModule.AddressSpaceStart) ||
+					  (IDTLocation + SIZE_4KB > PeVmData[VmType].UserModule.AddressSpaceStart +
+								   PeVmData[VmType].UserModule.AddressSpaceSize))
+				{
+					DEBUG ((EFI_D_ERROR,
+                                                "%ld PeExceptionHandler - VM/PE IDT outside of VM/PE address space - terminating VM\n",
+                                                CpuIndex));
+				}
 				else
 				{	
 					// does the VM/PE want to handle its own page fault
