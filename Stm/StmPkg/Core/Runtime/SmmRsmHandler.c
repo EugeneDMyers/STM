@@ -43,14 +43,22 @@ VOID
 	ExecutiveVmcsPtr = VmRead64 (VMCS_64_CONTROL_EXECUTIVE_VMCS_PTR_INDEX);
   if (IsOverlap (ExecutiveVmcsPtr, VmcsSize, mHostContextCommon.TsegBase, mHostContextCommon.TsegLength)) {
 			// Overlap TSEG
-			DEBUG ((EFI_D_ERROR, "%ld RsmHandler - ExecutiveVmcsPtr violation (RsmHandler) - %016lx\n", Index, ExecutiveVmcsPtr));
-			CpuDeadLoop() ;
+         DEBUG ((EFI_D_ERROR,
+                "%ld RsmHandler - ExecutiveVmcsPtr violation - %016lx\n",
+                Index,
+                ExecutiveVmcsPtr));
+ 		
+	  CpuDeadLoop() ;
 	}
 
 	VmcsLinkPtr = VmRead64 (VMCS_64_GUEST_VMCS_LINK_PTR_INDEX);
   if (IsOverlap (VmcsLinkPtr, VmcsSize, mHostContextCommon.TsegBase, mHostContextCommon.TsegLength)) {
 			// Overlap TSEG
-			DEBUG ((EFI_D_ERROR, "%ld RsmHandler - VmcsLinkPtr violation (RsmHandler) - %016lx\n", Index, VmcsLinkPtr));
+                        DEBUG ((EFI_D_ERROR,
+                               "%ld RsmHandler - VmcsLinkPtr violation - %016lx\n",
+                               Index,
+                               VmcsLinkPtr));
+
 			CpuDeadLoop() ;
 	}
 

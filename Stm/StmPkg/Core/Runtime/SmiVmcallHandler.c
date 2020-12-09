@@ -42,7 +42,7 @@ SmiVmcallInitializeProtectionHandler (
 
 /**
 
-  This function is VMCALL handler for SMI.
+  This function is the STARt_API handler for SMI.
 
   @param Index             CPU index
   @param AddressParameter  Addresss parameter
@@ -72,23 +72,29 @@ SmiVmcallStartHandler (
 
     if(Index == 0)
     {
-		//EptDumpPageTable (&mGuestContextCommonSmm[0].EptPointer);  // **DEBUG** Dump the SMI Handler EPT tables
-		// sync the BSP CPU once the API is ready
+#if 0
+       // Dump the SMI handler EPT tables
+	//EptDumpPageTable (&mGuestContextCommonSmm[0].EptPointer);  // **DEBUG** Dump the SMI Handler EPT tables
+#endif
+	// sync the BSP CPU once the API is ready
         CpuReadySync(Index);
 
-		// turn on SMI for the BSP - the base code allows SMIs before this point
-		// this mod prvents SMIs until the STM is ready to process them
+	// turn on SMI for the BSP - the base code allows SMIs before this point
+	// this mod prvents SMIs until the STM is ready to process them
 
-		GuestInterruptibilityState.Uint32 = VmRead32 (VMCS_32_GUEST_INTERRUPTIBILITY_STATE_INDEX);
+	GuestInterruptibilityState.Uint32 = VmRead32 (VMCS_32_GUEST_INTERRUPTIBILITY_STATE_INDEX);
         GuestInterruptibilityState.Bits.BlockingBySmi = 0;
-		VmWrite32 (VMCS_32_GUEST_INTERRUPTIBILITY_STATE_INDEX, GuestInterruptibilityState.Uint32);
+	VmWrite32 (VMCS_32_GUEST_INTERRUPTIBILITY_STATE_INDEX, GuestInterruptibilityState.Uint32);
     }
 #if 0
 	DumpVmcsAllField();
 #endif
     return STM_SUCCESS;
   } else {
-	  DEBUG((EFI_D_ERROR, "%d STM_API_START -- Error STM already started\n", (UINTN) Index));
+   DEBUG ((EFI_D_ERROR,
+            "%ld SmiVmcallStartHandler - STM_API_START -- Error STM already started\n",
+             (UINTN) Index));
+
     return ERROR_STM_ALREADY_STARTED;
   }
 }
