@@ -38,8 +38,8 @@ SECTIONS
 	.StmSpecVerMajor ALIGN(2048) : {BYTE(1)}
 	.StmSpecVerMinor   	     : {BYTE(0)}
 	.Reserved                    : {SHORT(0)}
-        /* page tables are after the Stm Image */
-        .StaticImageSize             : {LONG( ((_StmImageEnd + 0xFFF) & 0xFFFFF000) )} 
+	/* page tables are after the Stm Image */
+	.StaticImageSize             : {LONG( ((_StmImageEnd + 0xFFF) & 0xFFFFF000) )} 
 	.PerProcDynamicMemorySize    : {LONG(SizeOfPerProcessorStack)}
 	.AdditionalDynamicMemorySize : {LONG(HeapSize + PageTableSize)}
 
@@ -111,7 +111,6 @@ SECTIONS
         .Attribute8        : {BYTE(0x93)}
         .LimitHi8          : {BYTE(0xCF)}
         .BaseHi8           : {BYTE(0)}      
-	
     	.fill3 : { FILL(0x0); . = ALIGN(0x1000);}
 
     	.text   : {
@@ -129,7 +128,7 @@ SECTIONS
 	*(.data.rel.ro.local)
 	} =0x0
 
-	. = ALIGN(0x20);
+       . = ALIGN(0x20);
 
         _ElfRelocTablesStart = .;
         .reloc : {
@@ -137,9 +136,8 @@ SECTIONS
         }
         _ElfRelocTablesEnd = .;
 
-	_StmImageEnd = .;
 
-        . = ALIGN(0X1000);
+	. = ALIGN(0X1000);
         .data : {
         *(.data.*)
         }
@@ -150,24 +148,23 @@ SECTIONS
     	}
     	. = ALIGN(0x20);
 
-        _BSS_start = .;
+	_BSS_start = .;
     	.bss : {
       	*(.bss.*)
       	*(COMMON)
-        *(.bss)
+         *(.bss)
       	/* dummy */
       	/* LONG (0x12345678) */
     	}
-        _BSS_end = .;
+	_BSS_end = .;
 
     	. = ALIGN(0x20);
     	.edata : {
-	}
-       . = ALIGN(0x20);
+    	}
+    	. = ALIGN(0x20);
+	_StmImageEnd = .;
 
-        _StmImageEnd = .;
-
-	. = ALIGN(0x1000);
-    	_StmPageTables = .;
-    	. = . + 24K;    /* 6 pages for STM page tables, filled by BIOS and/or SINIT */
+        . = ALIGN(0x1000);
+        _StmPageTables = .;
+        . = . + 24K;    /* 6 pages for STM page tables, filled by BIOS and/or SINIT */
 }

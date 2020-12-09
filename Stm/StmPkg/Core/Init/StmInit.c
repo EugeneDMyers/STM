@@ -1279,6 +1279,7 @@ InitializeSmmMonitor (
 
   Index = GetIndexFromStack (Register);
   if (Index == 0) {
+
    // Initialize the BSS before anyone has a chance to use it
 
    MSEG = (UINT64) AsmReadMsr64(IA32_SMM_MONITOR_CTL_MSR_INDEX) & 0xFFFFF000;
