@@ -19,7 +19,7 @@ if("${UART}")
 if("${HEAPSIZE}")
 	message("Custom Heapsize set: ${HEAPSIZE}")
 	else()
-	set(HEAPSIZE 0x246000)
+	set(HEAPSIZE 0x46000)
 	message("Default Heapsize set: ${HEAPSIZE}")
 	endif()
 
