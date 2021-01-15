@@ -11,22 +11,26 @@ This is the CMake based build system for the STM.
 
         UARTBASE - suboption: UART I/O address in hex format.
                 
-		This option allows the use of alternative UART ports for
-		STM console output.
+		This option defines the UART port for STM console output.
+
+		0x000 indicates no serial port.
 
 		Default: Console output will be directed to port 0x3F8
 
         HEAPSIZE - suboption: size of STM heap space in hex format
 
-		This option declares the STM heap space.  The developer
-		must ensure this size will not make the STM too large 
-		for the MSEG.
+		The STM_HEAPSIZE defines the heap space that is available
+	        to the STM.  The default size assumes a MSEG size of 0x100000.
 
-		Default: STM heap space is set at 0x246000
+		If STMPE_ENABLED is set, STM_HEAPSIZE should be a minimum
+		of 0x246000, which assumes a MSEG size of 0x300000.  This
+		size allows a VM/PE to occupy 0x200000 bytes.
+
+		Default: STM heap space is set at 0x46000
 
 	BUILD - suboptions: release, debug
 
-		This option currently defines the amount of console output the
+		This option defines the amount of console output the
 		STM generates.
 
 		debug - all console output
@@ -34,7 +38,17 @@ This is the CMake based build system for the STM.
 
 		Default: debug
 
-         
+	CBMEM_ENABLED - (coreboot only) Places the STM console output into the cbmem.
+
+		Default: STM console output is not sent to the cbmem.
+
+	STMPE_ENABLED - Enable the Virtual Machine - Protected Execution (VM/PE)
+
+		STM/PE supports additional virtual machines in SMRAM each of which
+		is a protected execution environment.  This capability provides a
+		safe environment for applications such as introspection.
+
+		Default: STM/PE is disabled
 
 Steps for building:
 
