@@ -524,7 +524,7 @@ UINT32  PostPeVmProc(UINT32 rc, UINT32 CpuIndex, UINT32 mode)
 
 				// turn on the timer
 
-				SetTimerRate(PeriodicSmi16Sec);
+				SetTimerRate(PeriodicSmi32Sec);
 				StartTimer();
 
 				AckTimer();
