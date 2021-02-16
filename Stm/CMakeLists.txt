@@ -5,6 +5,7 @@ project(stm C ASM)
 
 if("${BIOS}" STREQUAL "coreboot")
 	add_definitions( -DCOREBOOT32 )
+	add_definitions( -DPMBASE_BIOS_RESOURCE )
 	message("Building for Coreboot")
 	endif()
 
@@ -39,6 +40,10 @@ if("${STMPE_ENABLED}")
 	add_definitions( -DCONFIG_STM_STMPE_ENABLE )
 	message("STM/PE Enabled")
 	endif()
+
+if("${PMBASE}")
+	add_definitions( -DCONFIG_PMBASE=${PMBASE} )
+	endif() 
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Xlinker -Map=stm.map -Xlinker --build-id=none -Xlinker --no-dynamic-linker -Xlinker --noinhibit-exec -Os -falign-functions -ffreestanding -s -pie --entry _ModuleEntryPoint -u _ModuleEntryPoint -nostdlib -n -z common-page-size=0x40 -fno-asynchronous-unwind-tables  -fno-jump-tables -fPIC -fno-stack-protector -fno-stack-check -include PcdData.h -T ${PROJECT_SOURCE_DIR}/StmPkg/Core/Stm.lds")
 
