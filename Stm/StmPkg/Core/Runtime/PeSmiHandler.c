@@ -28,12 +28,12 @@ extern void StopSwTimer(void);
 extern void SetEndOfSmi(void);
 extern void PrintVmxState(UINT32 CpuIndex, ROOT_VMX_STATE * RootState);
 
-static UINT32 HandleTimer = 0;
-static UINT32 HandleSmi = 0;
+UINT32 HandleTimer = 0;
+UINT32 HandleSmi = 0;
 
 // additional VM/PE SMI handling 
 
-static UINT32 retvalue = 0;
+UINT32 retvalue = 0;
 
 UINT32 PeSmiHandler(UINT32 CpuIndex)
 {
@@ -48,7 +48,7 @@ UINT32 PeSmiHandler(UINT32 CpuIndex)
 
 	if(PeSmiControl.PeCpuIndex == (INT32)CpuIndex )  // when the pe/vm comes in...
 	{
-#if 0
+#if 1
 		DEBUG((EFI_D_INFO,
 			"%ld PeSmiHandler - VM/PE responded to SMI, CurrPeSmiState %ld\n",
 				CpuIndex,
@@ -117,7 +117,7 @@ UINT32 PeSmiHandler(UINT32 CpuIndex)
 
 				if(TimerSTS != 0)
 				{
-#if 0
+#if 1
 					DEBUG((EFI_D_INFO,
 						"%ld CheckAndGetState - (PESMIHSMI) Processing VM/PE startup PeSmiState: %d\n",
 						CpuIndex,
