@@ -1020,6 +1020,8 @@ ApInit (
 {
   X86_REGISTER        *Reg;
   IA32_DESCRIPTOR IdtrLoad;
+  // Make sure there is no residue
+  AsmWbinvd();  // make sure it gets out
 
   while (!mIsBspInitialized) {
     //
